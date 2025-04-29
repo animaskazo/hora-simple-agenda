@@ -11,28 +11,65 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 
 const DoctorAvailabilityView = () => {
-  const { doctorId } = useParams();
+  const { doctorId, email } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [doctorName, setDoctorName] = useState<string>("");
   const [doctorSpecialty, setDoctorSpecialty] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<boolean>(false);
+  const [foundDoctorId, setFoundDoctorId] = useState<string | null>(null);
   
   useEffect(() => {
     const fetchDoctorDetails = async () => {
       try {
         setLoading(true);
-        if (!doctorId) {
+        
+        let query = supabase.from("doctors").select("id, name, specialty");
+        
+        // Check if we're using doctorId or email for the search
+        if (doctorId) {
+          query = query.eq("id", doctorId);
+        } else if (email) {
+          // Assuming the doctor's email is stored in the auth.users table
+          // and linked to the doctors table via user_id
+          const { data: userData, error: userError } = await supabase
+            .from("doctors")
+            .select("id, name, specialty, user_id")
+            .eq("user_id", email);
+            
+          if (userError) {
+            throw userError;
+          }
+          
+          if (userData && userData.length > 0) {
+            setDoctorName(userData[0].name);
+            setDoctorSpecialty(userData[0].specialty);
+            setFoundDoctorId(userData[0].id);
+            setLoading(false);
+            return;
+          } else {
+            setError(true);
+            toast({
+              title: "Error",
+              description: "No se encontró el médico con ese correo electrónico",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+        } else {
           setError(true);
+          toast({
+            title: "Error",
+            description: "No se proporcionó un identificador válido para el médico",
+            variant: "destructive",
+          });
+          setLoading(false);
           return;
         }
 
-        const { data, error } = await supabase
-          .from("doctors")
-          .select("name, specialty")
-          .eq("id", doctorId)
-          .maybeSingle();
+        const { data, error } = await query.maybeSingle();
 
         if (error) {
           console.error("Error fetching doctor:", error);
@@ -51,6 +88,7 @@ const DoctorAvailabilityView = () => {
 
         setDoctorName(data.name);
         setDoctorSpecialty(data.specialty);
+        setFoundDoctorId(data.id);
       } catch (error) {
         console.error("Error:", error);
         setError(true);
@@ -65,13 +103,13 @@ const DoctorAvailabilityView = () => {
     };
 
     fetchDoctorDetails();
-  }, [doctorId, toast]);
+  }, [doctorId, email, toast]);
 
   const handleSelectSlot = (slot: any) => {
     // Redirigir al formulario de reserva con los datos del slot y doctor preseleccionados
     navigate(`/booking`, { 
       state: { 
-        selectedDoctorId: doctorId,
+        selectedDoctorId: foundDoctorId || doctorId,
         selectedDoctorName: doctorName,
         selectedSpecialty: doctorSpecialty,
         preselectedSlot: slot
@@ -132,7 +170,7 @@ const DoctorAvailabilityView = () => {
                   
                   <h3 className="font-medium mb-4">Horarios disponibles:</h3>
                   <TimeSlotPicker
-                    doctorId={doctorId || ""}
+                    doctorId={foundDoctorId || doctorId || ""}
                     onSelect={handleSelectSlot}
                   />
                 </>
