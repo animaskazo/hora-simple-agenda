@@ -7,10 +7,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface DoctorSelectorProps {
   specialty: string;
-  onSelect: (doctorId: string) => void;
+  onSelect: (doctorId: string, doctorName: string) => void;
+  initialValue?: string;
 }
 
 interface Doctor {
@@ -19,35 +22,53 @@ interface Doctor {
   specialty: string;
 }
 
-// Datos de ejemplo, normalmente vendrían de una API
-const MOCK_DOCTORS: Doctor[] = [
-  { id: "1", name: "Dra. Ana Martínez", specialty: "Medicina General" },
-  { id: "2", name: "Dr. Carlos Rodriguez", specialty: "Medicina General" },
-  { id: "3", name: "Dra. Laura González", specialty: "Pediatría" },
-  { id: "4", name: "Dr. Juan Pérez", specialty: "Pediatría" },
-  { id: "5", name: "Dra. Sofía Contreras", specialty: "Ginecología" },
-  { id: "6", name: "Dr. Miguel Sánchez", specialty: "Dermatología" },
-];
-
-const DoctorSelector = ({ specialty, onSelect }: DoctorSelectorProps) => {
-  const [selectedDoctor, setSelectedDoctor] = useState<string>("");
-  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
+const DoctorSelector = ({ specialty, onSelect, initialValue }: DoctorSelectorProps) => {
+  const [selectedDoctor, setSelectedDoctor] = useState<string>(initialValue || "");
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (specialty) {
-      const doctors = MOCK_DOCTORS.filter(
-        (doctor) => doctor.specialty === specialty
-      );
-      setFilteredDoctors(doctors);
-      setSelectedDoctor(""); // Reset selected doctor when specialty changes
+      fetchDoctors(specialty);
     } else {
-      setFilteredDoctors([]);
+      setDoctors([]);
     }
   }, [specialty]);
 
+  const fetchDoctors = async (specialty: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("doctors")
+        .select("id, name, specialty")
+        .eq("specialty", specialty);
+
+      if (error) throw error;
+
+      setDoctors(data || []);
+      
+      // Si hay un valor inicial y ya no es válido con los nuevos doctores
+      if (selectedDoctor && !data?.some(d => d.id === selectedDoctor)) {
+        setSelectedDoctor("");
+      }
+    } catch (error) {
+      console.error("Error fetching doctors:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los médicos",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSelect = (value: string) => {
     setSelectedDoctor(value);
-    onSelect(value);
+    const doctor = doctors.find(d => d.id === value);
+    if (doctor) {
+      onSelect(value, doctor.name);
+    }
   };
 
   return (
@@ -55,21 +76,23 @@ const DoctorSelector = ({ specialty, onSelect }: DoctorSelectorProps) => {
       <Select
         onValueChange={handleSelect}
         value={selectedDoctor}
-        disabled={!specialty || filteredDoctors.length === 0}
+        disabled={!specialty || doctors.length === 0 || isLoading}
       >
         <SelectTrigger>
           <SelectValue
             placeholder={
               !specialty
                 ? "Primero selecciona una especialidad"
-                : filteredDoctors.length === 0
+                : isLoading
+                ? "Cargando médicos..."
+                : doctors.length === 0
                 ? "No hay médicos disponibles"
                 : "Seleccionar médico"
             }
           />
         </SelectTrigger>
         <SelectContent>
-          {filteredDoctors.map((doctor) => (
+          {doctors.map((doctor) => (
             <SelectItem key={doctor.id} value={doctor.id}>
               {doctor.name}
             </SelectItem>

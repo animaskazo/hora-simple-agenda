@@ -8,6 +8,8 @@ import SpecialtySelector from "@/components/SpecialtySelector";
 import DoctorSelector from "@/components/DoctorSelector";
 import TimeSlotPicker from "@/components/TimeSlotPicker";
 import PatientForm from "@/components/PatientForm";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 interface TimeSlot {
   id: string;
@@ -23,36 +25,51 @@ interface Doctor {
   specialty: string;
 }
 
-// Datos de ejemplo, normalmente vendrían de una API
-const MOCK_DOCTORS: Doctor[] = [
-  { id: "1", name: "Dra. Ana Martínez", specialty: "Medicina General" },
-  { id: "2", name: "Dr. Carlos Rodriguez", specialty: "Medicina General" },
-  { id: "3", name: "Dra. Laura González", specialty: "Pediatría" },
-  { id: "4", name: "Dr. Juan Pérez", specialty: "Pediatría" },
-  { id: "5", name: "Dra. Sofía Contreras", specialty: "Ginecología" },
-  { id: "6", name: "Dr. Miguel Sánchez", specialty: "Dermatología" },
-];
+const STEPS = ["specialty", "doctor", "time", "patient"];
 
 const PatientBooking = () => {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>("");
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [activeStep, setActiveStep] = useState("specialty");
+  const { toast } = useToast();
 
-  const selectedDoctor = MOCK_DOCTORS.find(d => d.id === selectedDoctorId);
+  const selectedDoctor = selectedDoctorId 
+    ? { id: selectedDoctorId, name: "", specialty: "" } // El nombre se obtendrá del componente DoctorSelector
+    : null;
 
   const handleSpecialtySelect = (specialty: string) => {
     setSelectedSpecialty(specialty);
     setSelectedDoctorId("");
     setSelectedSlot(null);
+    setActiveStep("doctor");
   };
 
-  const handleDoctorSelect = (doctorId: string) => {
+  const handleDoctorSelect = (doctorId: string, doctorName: string) => {
     setSelectedDoctorId(doctorId);
+    if (selectedDoctor) {
+      selectedDoctor.name = doctorName;
+    }
     setSelectedSlot(null);
+    setActiveStep("time");
   };
 
   const handleTimeSlotSelect = (slot: TimeSlot) => {
     setSelectedSlot(slot);
+    setActiveStep("patient");
+  };
+
+  const canNavigateTo = (step: string) => {
+    const currentStepIndex = STEPS.indexOf(activeStep);
+    const targetStepIndex = STEPS.indexOf(step);
+    
+    if (targetStepIndex <= currentStepIndex) return true;
+    
+    if (step === "doctor" && selectedSpecialty) return true;
+    if (step === "time" && selectedDoctorId) return true;
+    if (step === "patient" && selectedSlot) return true;
+    
+    return false;
   };
 
   return (
@@ -63,54 +80,69 @@ const PatientBooking = () => {
         <h1 className="text-3xl font-bold mb-6 text-center">Reservar Hora Médica</h1>
         
         <div className="max-w-3xl mx-auto">
-          <div className="space-y-8">
-            <Card>
+          <Tabs value={activeStep} onValueChange={(value) => {
+            if (canNavigateTo(value)) {
+              setActiveStep(value);
+            } else {
+              toast({
+                title: "Completa el paso actual",
+                description: "Debes completar este paso antes de avanzar",
+                variant: "destructive"
+              });
+            }
+          }}>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="specialty">Especialidad</TabsTrigger>
+              <TabsTrigger value="doctor" disabled={!selectedSpecialty}>Médico</TabsTrigger>
+              <TabsTrigger value="time" disabled={!selectedDoctorId}>Horario</TabsTrigger>
+              <TabsTrigger value="patient" disabled={!selectedSlot}>Datos</TabsTrigger>
+            </TabsList>
+            
+            <Card className="mt-6">
               <CardContent className="pt-6">
-                <div className="space-y-6">
+                <TabsContent value="specialty">
                   <div>
-                    <h2 className="text-lg font-medium mb-2">1. Selecciona una especialidad</h2>
-                    <SpecialtySelector onSelect={handleSpecialtySelect} />
-                  </div>
-                  
-                  <div>
-                    <h2 className="text-lg font-medium mb-2">2. Selecciona un médico</h2>
-                    <DoctorSelector 
-                      specialty={selectedSpecialty} 
-                      onSelect={handleDoctorSelect} 
+                    <h2 className="text-lg font-medium mb-2">Selecciona una especialidad</h2>
+                    <SpecialtySelector 
+                      onSelect={handleSpecialtySelect} 
+                      initialValue={selectedSpecialty}
                     />
                   </div>
-                </div>
+                </TabsContent>
+                
+                <TabsContent value="doctor">
+                  <div>
+                    <h2 className="text-lg font-medium mb-2">Selecciona un médico</h2>
+                    <DoctorSelector 
+                      specialty={selectedSpecialty} 
+                      onSelect={handleDoctorSelect}
+                      initialValue={selectedDoctorId}
+                    />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="time">
+                  <div>
+                    <h2 className="text-lg font-medium mb-2">Selecciona un horario</h2>
+                    <TimeSlotPicker 
+                      doctorId={selectedDoctorId} 
+                      onSelect={handleTimeSlotSelect}
+                    />
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="patient">
+                  <div>
+                    <h2 className="text-lg font-medium mb-2">Completa tus datos</h2>
+                    <PatientForm 
+                      selectedSlot={selectedSlot}
+                      doctorName={selectedDoctor?.name || ""}
+                    />
+                  </div>
+                </TabsContent>
               </CardContent>
             </Card>
-            
-            {selectedDoctorId && (
-              <Card>
-                <CardContent className="pt-6">
-                  <h2 className="text-lg font-medium mb-4">
-                    3. Selecciona un horario
-                  </h2>
-                  <TimeSlotPicker 
-                    doctorId={selectedDoctorId} 
-                    onSelect={handleTimeSlotSelect}
-                  />
-                </CardContent>
-              </Card>
-            )}
-            
-            {selectedSlot && (
-              <Card>
-                <CardContent className="pt-6">
-                  <h2 className="text-lg font-medium mb-4">
-                    4. Completa tus datos
-                  </h2>
-                  <PatientForm 
-                    selectedSlot={selectedSlot}
-                    doctorName={selectedDoctor?.name || ""}
-                  />
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          </Tabs>
         </div>
       </main>
       
