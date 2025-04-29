@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { format, addDays, startOfWeek, isEqual } from "date-fns";
 import { es } from "date-fns/locale";
 
-interface Availability {
+export interface Availability {
   id: string;
   dayOfWeek: number; // 0 = domingo, 1 = lunes, etc.
   startHour: number;
@@ -16,14 +16,22 @@ interface Availability {
 
 interface WeeklyCalendarProps {
   onAvailabilityChange: (availability: Availability[]) => void;
+  initialAvailability?: Availability[];
 }
 
-const WeeklyCalendar = ({ onAvailabilityChange }: WeeklyCalendarProps) => {
+const WeeklyCalendar = ({ onAvailabilityChange, initialAvailability = [] }: WeeklyCalendarProps) => {
   const [selectedDay, setSelectedDay] = useState<number>(1); // Iniciar en lunes (1)
-  const [availability, setAvailability] = useState<Availability[]>([]);
+  const [availability, setAvailability] = useState<Availability[]>(initialAvailability);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [startHour, setStartHour] = useState<string>("09:00");
   const [endHour, setEndHour] = useState<string>("18:00");
+
+  useEffect(() => {
+    // Actualizar el estado local cuando cambian las props de disponibilidad inicial
+    if (initialAvailability.length > 0) {
+      setAvailability(initialAvailability);
+    }
+  }, [initialAvailability]);
 
   // Horas para selector
   const hours = Array.from({ length: 24 }, (_, i) => 
@@ -61,14 +69,16 @@ const WeeklyCalendar = ({ onAvailabilityChange }: WeeklyCalendarProps) => {
       endMinute: endMinuteVal,
     };
     
-    setAvailability(prev => [...prev, newBlock]);
-    onAvailabilityChange([...availability, newBlock]);
+    const newAvailability = [...availability, newBlock];
+    setAvailability(newAvailability);
+    onAvailabilityChange(newAvailability);
     setIsEditing(false);
   };
 
   const handleRemoveBlock = (id: string) => {
-    setAvailability(prev => prev.filter(block => block.id !== id));
-    onAvailabilityChange(availability.filter(block => block.id !== id));
+    const newAvailability = availability.filter(block => block.id !== id);
+    setAvailability(newAvailability);
+    onAvailabilityChange(newAvailability);
   };
 
   const formatTimeBlock = (block: Availability) => {
