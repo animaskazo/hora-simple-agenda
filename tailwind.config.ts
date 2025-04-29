@@ -19,10 +19,6 @@ export default {
 			}
 		},
 		extend: {
-			fontFamily: {
-				sans: ['GeistSans', 'sans-serif'],
-				heading: ['GeistSans', 'sans-serif'],
-			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -66,14 +62,7 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				},
-				// Tonos negros personalizados para texto
-				noir: {
-					DEFAULT: '#000000',
-					foreground: '#FFFFFF',
-					light: '#333333',
-					dark: '#000000',
-				},
+				}
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
