@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   Select,
   SelectContent,
@@ -14,9 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DoctorRegister = () => {
-  const navigate = useNavigate();
+  const { signUp, loading } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -97,18 +98,18 @@ const DoctorRegister = () => {
     return !Object.values(newErrors).some(error => error);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
-      // En una aplicación real aquí se enviaría el registro al backend
-      // Para esta demo, simulamos que el registro fue exitoso y redirigimos
-      navigate("/doctor/login", { 
-        state: { 
-          registrationSuccess: true,
-          email: formData.email
-        } 
-      });
+      await signUp(
+        formData.email, 
+        formData.password, 
+        {
+          name: formData.name, 
+          specialty: formData.specialty
+        }
+      );
     }
   };
 
@@ -136,6 +137,7 @@ const DoctorRegister = () => {
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="Dr. Juan Pérez"
+                    disabled={loading}
                   />
                   {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                 </div>
@@ -149,6 +151,7 @@ const DoctorRegister = () => {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="doctor@ejemplo.com"
+                    disabled={loading}
                   />
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
@@ -158,6 +161,7 @@ const DoctorRegister = () => {
                   <Select 
                     onValueChange={handleSpecialtyChange}
                     value={formData.specialty}
+                    disabled={loading}
                   >
                     <SelectTrigger id="specialty">
                       <SelectValue placeholder="Selecciona tu especialidad" />
@@ -181,6 +185,7 @@ const DoctorRegister = () => {
                     type="password"
                     value={formData.password}
                     onChange={handleChange}
+                    disabled={loading}
                   />
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                 </div>
@@ -193,12 +198,13 @@ const DoctorRegister = () => {
                     type="password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
+                    disabled={loading}
                   />
                   {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
                 </div>
                 
-                <Button type="submit" className="w-full mt-6">
-                  Registrarme
+                <Button type="submit" className="w-full mt-6" disabled={loading}>
+                  {loading ? "Procesando..." : "Registrarme"}
                 </Button>
               </form>
             </CardContent>

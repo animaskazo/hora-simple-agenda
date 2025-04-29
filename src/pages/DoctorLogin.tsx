@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface LocationState {
   registrationSuccess?: boolean;
@@ -15,10 +15,9 @@ interface LocationState {
 }
 
 const DoctorLogin = () => {
-  const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
   const state = location.state as LocationState;
+  const { signIn, loading } = useAuth();
   
   const [formData, setFormData] = useState({
     email: state?.email || "",
@@ -28,16 +27,6 @@ const DoctorLogin = () => {
     email: "",
     password: "",
   });
-
-  useEffect(() => {
-    // Mostrar mensaje de éxito si viene de registro
-    if (state?.registrationSuccess) {
-      toast({
-        title: "Registro exitoso",
-        description: "Tu cuenta ha sido creada correctamente",
-      });
-    }
-  }, [state, toast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -71,13 +60,11 @@ const DoctorLogin = () => {
     return !Object.values(newErrors).some(error => error);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (validateForm()) {
-      // En una aplicación real aquí se validaría contra un backend
-      // Para esta demo, simulamos un inicio de sesión exitoso
-      navigate("/doctor/dashboard");
+      await signIn(formData.email, formData.password);
     }
   };
 
@@ -106,6 +93,7 @@ const DoctorLogin = () => {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="doctor@ejemplo.com"
+                    disabled={loading}
                   />
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
@@ -118,6 +106,7 @@ const DoctorLogin = () => {
                     type="password"
                     value={formData.password}
                     onChange={handleChange}
+                    disabled={loading}
                   />
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                 </div>
@@ -128,8 +117,8 @@ const DoctorLogin = () => {
                   </Link>
                 </div>
                 
-                <Button type="submit" className="w-full mt-6">
-                  Iniciar sesión
+                <Button type="submit" className="w-full mt-6" disabled={loading}>
+                  {loading ? "Iniciando sesión..." : "Iniciar sesión"}
                 </Button>
               </form>
             </CardContent>
