@@ -20,9 +20,12 @@ const TimeSlotPicker = ({ doctorId, onSelect }: TimeSlotPickerProps) => {
 
   useEffect(() => {
     if (doctorId) {
+      console.log("TimeSlotPicker: Fetching availability for doctor ID:", doctorId);
       fetchDoctorAvailability(doctorId);
     } else {
+      console.log("TimeSlotPicker: No doctor ID provided");
       setTimeSlots([]);
+      setIsLoading(false);
     }
   }, [doctorId]);
 
@@ -30,14 +33,21 @@ const TimeSlotPicker = ({ doctorId, onSelect }: TimeSlotPickerProps) => {
     setIsLoading(true);
     try {
       // Get doctor availability
+      console.log("Fetching doctor availability for ID:", doctorId);
       const { data: availabilityData, error: availabilityError } = await supabase
         .from("doctor_availability")
         .select("*")
         .eq("doctor_id", doctorId);
 
-      if (availabilityError) throw availabilityError;
+      if (availabilityError) {
+        console.error("Error fetching availability:", availabilityError);
+        throw availabilityError;
+      }
+
+      console.log("Availability data:", availabilityData);
 
       if (!availabilityData || availabilityData.length === 0) {
+        console.log("No availability data found for doctor ID:", doctorId);
         setTimeSlots([]);
         setIsLoading(false);
         return;
@@ -45,6 +55,7 @@ const TimeSlotPicker = ({ doctorId, onSelect }: TimeSlotPickerProps) => {
 
       // Generate specific date/time slots from availability
       const generatedSlots = generateTimeSlotsFromAvailability(availabilityData);
+      console.log("Generated time slots:", generatedSlots);
       setTimeSlots(generatedSlots);
     } catch (error) {
       console.error("Error fetching doctor availability:", error);

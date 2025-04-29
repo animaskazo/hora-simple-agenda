@@ -24,41 +24,77 @@ const DoctorAvailabilityView = () => {
     const fetchDoctorDetails = async () => {
       try {
         setLoading(true);
+        console.log("Fetching doctor details. doctorId:", doctorId, "email:", email);
         
-        let query = supabase.from("doctors").select("id, name, specialty");
-        
-        // Check if we're using doctorId or email for the search
+        // Case 1: Using Doctor ID directly
         if (doctorId) {
-          query = query.eq("id", doctorId);
-        } else if (email) {
-          // Assuming the doctor's email is stored in the auth.users table
-          // and linked to the doctors table via user_id
-          const { data: userData, error: userError } = await supabase
+          const { data, error } = await supabase
             .from("doctors")
-            .select("id, name, specialty, user_id")
-            .eq("user_id", email);
-            
-          if (userError) {
-            throw userError;
+            .select("id, name, specialty")
+            .eq("id", doctorId)
+            .maybeSingle();
+
+          if (error) {
+            console.error("Error fetching doctor by ID:", error);
+            throw error;
           }
-          
-          if (userData && userData.length > 0) {
-            setDoctorName(userData[0].name);
-            setDoctorSpecialty(userData[0].specialty);
-            setFoundDoctorId(userData[0].id);
-            setLoading(false);
-            return;
-          } else {
+
+          if (!data) {
             setError(true);
             toast({
               title: "Error",
-              description: "No se encontró el médico con ese correo electrónico",
+              description: "No se encontró el médico solicitado con ese ID",
               variant: "destructive",
             });
             setLoading(false);
             return;
           }
-        } else {
+
+          console.log("Found doctor by ID:", data);
+          setDoctorName(data.name);
+          setDoctorSpecialty(data.specialty);
+          setFoundDoctorId(data.id);
+          setLoading(false);
+          return;
+        } 
+        
+        // Case 2: Using Email
+        else if (email) {
+          console.log("Looking up doctor by email:", email);
+          
+          // Find doctor by email in doctors table
+          const { data, error } = await supabase
+            .from("doctors")
+            .select("id, name, specialty")
+            .eq("user_id", email)
+            .maybeSingle();
+
+          if (error) {
+            console.error("Error fetching doctor by email:", error);
+            throw error;
+          }
+          
+          if (!data) {
+            setError(true);
+            toast({
+              title: "Error",
+              description: `No se encontró ningún médico con el email ${email}`,
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
+          }
+          
+          console.log("Found doctor by email:", data);
+          setDoctorName(data.name);
+          setDoctorSpecialty(data.specialty);
+          setFoundDoctorId(data.id);
+          setLoading(false);
+          return;
+        } 
+        
+        // No identifier provided
+        else {
           setError(true);
           toast({
             title: "Error",
@@ -68,29 +104,8 @@ const DoctorAvailabilityView = () => {
           setLoading(false);
           return;
         }
-
-        const { data, error } = await query.maybeSingle();
-
-        if (error) {
-          console.error("Error fetching doctor:", error);
-          throw error;
-        }
-
-        if (!data) {
-          setError(true);
-          toast({
-            title: "Error",
-            description: "No se encontró el médico solicitado",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        setDoctorName(data.name);
-        setDoctorSpecialty(data.specialty);
-        setFoundDoctorId(data.id);
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Error al buscar médico:", error);
         setError(true);
         toast({
           title: "Error",

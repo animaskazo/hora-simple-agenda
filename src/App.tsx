@@ -28,8 +28,8 @@ const AppWithProviders = () => (
         <Route path="/doctor/register" element={<DoctorRegister />} />
         <Route path="/doctor/login" element={<DoctorLogin />} />
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
-        <Route path="/doctor/:doctorId" element={<DoctorAvailabilityView />} />
         <Route path="/doctor/email/:email" element={<DoctorAvailabilityView />} />
+        <Route path="/doctor/:doctorId" element={<DoctorAvailabilityView />} />
         <Route path="/booking" element={<PatientBooking />} />
         <Route path="/booking/confirm" element={<ConfirmBooking />} />
         <Route path="*" element={<NotFound />} />
