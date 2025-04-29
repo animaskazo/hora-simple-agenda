@@ -1,4 +1,5 @@
 
+
 import { Button } from "@/components/ui/button";
 
 interface WeekDaySelectorProps {
@@ -34,3 +35,4 @@ export const WeekDaySelector = ({ selectedDay, onSelectDay }: WeekDaySelectorPro
 };
 
 export { weekDays };
+
