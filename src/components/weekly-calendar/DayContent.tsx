@@ -2,23 +2,23 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Availability } from "./types";
-import { AvailabilityBlock } from "./AvailabilityBlock";
-import { AvailabilityForm } from "./AvailabilityForm";
+import { AvailabilityEditor } from "./AvailabilityEditor";
 import { weekDays } from "./WeekDaySelector";
+import { AvailabilityList } from "./AvailabilityList";
 
-interface DayAvailabilityProps {
+interface DayContentProps {
   selectedDay: number;
   availability: Availability[];
   onAddBlock: (startHour: string, endHour: string) => void;
   onRemoveBlock: (id: string) => void;
 }
 
-export const DayAvailability = ({ 
+export const DayContent = ({ 
   selectedDay, 
   availability, 
   onAddBlock, 
   onRemoveBlock 
-}: DayAvailabilityProps) => {
+}: DayContentProps) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   
   // Get day blocks for the selected day
@@ -38,24 +38,13 @@ export const DayAvailability = ({
         {selectedDayName}
       </h3>
       
-      <div className="space-y-2 mb-4">
-        {dayBlocks.map(block => (
-          <AvailabilityBlock 
-            key={block.id} 
-            block={block} 
-            onRemove={onRemoveBlock} 
-          />
-        ))}
-        
-        {dayBlocks.length === 0 && (
-          <div className="text-center py-2 text-muted-foreground">
-            No hay disponibilidad configurada para este día
-          </div>
-        )}
-      </div>
+      <AvailabilityList 
+        blocks={dayBlocks} 
+        onRemove={onRemoveBlock} 
+      />
       
       {isEditing ? (
-        <AvailabilityForm 
+        <AvailabilityEditor 
           selectedDay={selectedDay}
           onCancel={() => setIsEditing(false)}
           onSave={handleSave}

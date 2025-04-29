@@ -1,22 +1,25 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Availability } from "./types";
 
-interface AvailabilityFormProps {
+interface AvailabilityEditorProps {
   selectedDay: number;
-  onCancel: () => void;
   onSave: (startHour: string, endHour: string) => void;
+  onCancel: () => void;
 }
 
-export const AvailabilityForm = ({ selectedDay, onCancel, onSave }: AvailabilityFormProps) => {
+export const AvailabilityEditor = ({ selectedDay, onSave, onCancel }: AvailabilityEditorProps) => {
   const [startHour, setStartHour] = useState<string>("09:00");
   const [endHour, setEndHour] = useState<string>("18:00");
 
-  // Horas para selector
+  // Hours for selector
   const hours = Array.from({ length: 24 }, (_, i) => 
     `${i.toString().padStart(2, '0')}:00`
   );
+  
+  const handleSave = () => {
+    onSave(startHour, endHour);
+  };
   
   return (
     <div className="space-y-4">
@@ -51,7 +54,7 @@ export const AvailabilityForm = ({ selectedDay, onCancel, onSave }: Availability
         <Button variant="outline" onClick={onCancel}>
           Cancelar
         </Button>
-        <Button onClick={() => onSave(startHour, endHour)}>
+        <Button onClick={handleSave}>
           Guardar
         </Button>
       </div>
