@@ -69,11 +69,12 @@ const DoctorAvailabilityView = () => {
         else if (doctorId) {
           console.log(`Looking up doctor by ID: ${doctorId}`);
           
+          // Change from .single() to .maybeSingle() to handle no results gracefully
           const { data: doctorResult, error: doctorError } = await supabase
             .from("doctors")
             .select("*")
             .eq("id", doctorId)
-            .single();
+            .maybeSingle(); // Change from .single() to .maybeSingle()
             
           if (doctorError) {
             console.error("Error fetching doctor by ID:", doctorError);
