@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import WeeklyCalendar from "@/components/WeeklyCalendar";
+import WeeklyCalendar, { Availability } from "@/components/weekly-calendar/WeeklyCalendar";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, Clock } from "lucide-react";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
