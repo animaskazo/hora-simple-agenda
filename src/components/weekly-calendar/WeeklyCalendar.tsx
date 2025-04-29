@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Clock } from "lucide-react";
 import { WeeklyCalendarProps, Availability } from "./types";
 import { WeekDaySelector } from "./WeekDaySelector";
-import { DayAvailability } from "./DayAvailability";
+import { DayContent } from "./DayContent";
 
 const WeeklyCalendar = ({ onAvailabilityChange, initialAvailability = [] }: WeeklyCalendarProps) => {
   const [selectedDay, setSelectedDay] = useState<number>(1); // Iniciar en lunes (1)
@@ -64,7 +64,7 @@ const WeeklyCalendar = ({ onAvailabilityChange, initialAvailability = [] }: Week
           onSelectDay={setSelectedDay} 
         />
         
-        <DayAvailability 
+        <DayContent
           selectedDay={selectedDay}
           availability={availability}
           onAddBlock={handleAddBlock}
