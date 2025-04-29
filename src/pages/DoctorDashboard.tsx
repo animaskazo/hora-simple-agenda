@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
@@ -7,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import WeeklyCalendar, { Availability } from "@/components/weekly-calendar/WeeklyCalendar";
+import WeeklyCalendar from "@/components/weekly-calendar/WeeklyCalendar";
+import { Availability as WeeklyAvailability } from "@/components/weekly-calendar/types";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, Clock } from "lucide-react";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
@@ -48,7 +48,7 @@ const DoctorDashboard = () => {
   const navigate = useNavigate();
   const [doctorData, setDoctorData] = useState<DoctorData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [availabilities, setAvailabilities] = useState<Availability[]>([]);
+  const [availabilities, setAvailabilities] = useState<WeeklyAvailability[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const { toast } = useToast();
 
@@ -79,7 +79,7 @@ const DoctorDashboard = () => {
           
           if (availabilityError) throw availabilityError;
           
-          const formattedAvailability: Availability[] = availabilityData.map(slot => ({
+          const formattedAvailability: WeeklyAvailability[] = availabilityData.map(slot => ({
             id: slot.id,
             dayOfWeek: slot.day_of_week,
             startHour: slot.start_hour,
@@ -111,7 +111,7 @@ const DoctorDashboard = () => {
     checkAuth();
   }, [user, navigate]);
 
-  const handleAvailabilityChange = async (newAvailability: Availability[]) => {
+  const handleAvailabilityChange = async (newAvailability: WeeklyAvailability[]) => {
     if (!doctorData) return;
     
     try {
