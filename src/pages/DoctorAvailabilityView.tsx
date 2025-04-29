@@ -8,6 +8,15 @@ import Footer from "@/components/Footer";
 import { TimeSlotData } from "@/components/time-slot-picker/TimeSlot";
 import { Button } from "@/components/ui/button";
 
+// Define a type for the doctor data from the find_doctor_by_email function
+interface DoctorData {
+  id: string;
+  name: string;
+  specialty: string;
+  user_id: string;
+  specialty_id: string;
+}
+
 const DoctorAvailabilityView = () => {
   const { doctorId, email } = useParams();
   const navigate = useNavigate();
@@ -41,11 +50,13 @@ const DoctorAvailabilityView = () => {
           
           console.log("Doctor lookup by email result:", data);
           
-          if (!data || data.length === 0) {
+          // Check if we got any results and data is an array
+          if (!data || (Array.isArray(data) && data.length === 0)) {
             throw new Error(`No se encontró ningún médico con el email: ${email}`);
           }
           
-          doctorData = data[0];
+          // If data is an array, take the first element
+          doctorData = Array.isArray(data) ? data[0] : data;
         } 
         // Otherwise, look up by doctor ID
         else if (doctorId) {
