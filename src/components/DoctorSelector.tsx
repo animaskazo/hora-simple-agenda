@@ -38,42 +38,64 @@ const DoctorSelector = ({ specialty, onSelect, initialValue }: DoctorSelectorPro
   const fetchDoctors = async (specialty: string) => {
     setIsLoading(true);
     try {
-      // Consulta actualizada para buscar por specialty_id o specialty para mayor compatibilidad
+      console.log("Buscando médicos para la especialidad:", specialty);
+      
+      // Primer intento: buscar por el ID de la especialidad en la tabla specialties
       const { data: specialtyData, error: specialtyError } = await supabase
         .from("specialties")
         .select("id")
         .eq("name", specialty)
-        .single();
+        .maybeSingle();
 
-      if (specialtyError) {
-        // Si no encontramos por ID, intentamos buscar directamente por nombre de especialidad (para compatibilidad)
-        const { data, error } = await supabase
-          .from("doctors")
-          .select("id, name, specialty")
-          .eq("specialty", specialty);
+      let doctorsFound: Doctor[] = [];
 
-        if (error) throw error;
-        setDoctors(data || []);
-        
-        if (selectedDoctor && !data?.some(d => d.id === selectedDoctor)) {
-          setSelectedDoctor("");
-        }
-      } else {
-        // Si encontramos la especialidad por su ID, usamos el specialty_id para la búsqueda
+      if (specialtyData?.id) {
+        console.log("Especialidad encontrada con ID:", specialtyData.id);
+        // Buscar doctores por el ID de la especialidad
         const { data, error } = await supabase
           .from("doctors")
           .select("id, name, specialty")
           .eq("specialty_id", specialtyData.id);
 
-        if (error) throw error;
-        setDoctors(data || []);
-        
-        if (selectedDoctor && !data?.some(d => d.id === selectedDoctor)) {
-          setSelectedDoctor("");
+        if (error) {
+          console.error("Error buscando por specialty_id:", error);
+        } else if (data && data.length > 0) {
+          console.log(`Encontrados ${data.length} médicos por specialty_id`);
+          doctorsFound = data;
         }
       }
+
+      // Si no se encontraron doctores por specialty_id o hubo un error, buscar por el nombre de la especialidad
+      if (doctorsFound.length === 0) {
+        console.log("Buscando médicos por nombre de especialidad:", specialty);
+        const { data, error } = await supabase
+          .from("doctors")
+          .select("id, name, specialty")
+          .eq("specialty", specialty);
+
+        if (error) {
+          console.error("Error buscando por specialty:", error);
+          throw error;
+        } else if (data && data.length > 0) {
+          console.log(`Encontrados ${data.length} médicos por specialty`);
+          doctorsFound = data;
+        }
+      }
+
+      // Combinar resultados (eliminando duplicados)
+      const uniqueDoctors = Array.from(new Map(doctorsFound.map(doctor => 
+        [doctor.id, doctor])).values());
+      
+      console.log(`Total de médicos encontrados (únicos): ${uniqueDoctors.length}`);
+      setDoctors(uniqueDoctors);
+      
+      // Reset selectedDoctor if it's no longer valid
+      if (selectedDoctor && !uniqueDoctors.some(d => d.id === selectedDoctor)) {
+        console.log("Reseteando el médico seleccionado porque ya no existe en los resultados");
+        setSelectedDoctor("");
+      }
     } catch (error) {
-      console.error("Error fetching doctors:", error);
+      console.error("Error completo al buscar médicos:", error);
       toast({
         title: "Error",
         description: "No se pudieron cargar los médicos",
