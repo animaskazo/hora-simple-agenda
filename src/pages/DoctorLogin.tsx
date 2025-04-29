@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,23 +69,23 @@ const DoctorLogin = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-noir">
       <Header />
       
-      <main className="flex-1 container mx-auto py-8 px-4">
+      <main className="flex-1 container mx-auto py-16 px-4">
         <div className="max-w-md mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">Inicio de sesión</CardTitle>
-              <CardDescription>
+          <Card className="bg-noir-light border-noir-dark shadow-xl">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-2xl font-heading text-white">Inicio de sesión</CardTitle>
+              <CardDescription className="text-gray-300">
                 Accede a tu cuenta para gestionar tus horas médicas
               </CardDescription>
             </CardHeader>
             
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Correo electrónico</Label>
+                  <Label htmlFor="email" className="text-gray-200">Correo electrónico</Label>
                   <Input
                     id="email"
                     name="email"
@@ -94,12 +94,13 @@ const DoctorLogin = () => {
                     onChange={handleChange}
                     placeholder="doctor@ejemplo.com"
                     disabled={loading}
+                    className="bg-noir-dark border-gray-700 text-white placeholder:text-gray-500"
                   />
                   {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña</Label>
+                  <Label htmlFor="password" className="text-gray-200">Contraseña</Label>
                   <Input
                     id="password"
                     name="password"
@@ -107,6 +108,7 @@ const DoctorLogin = () => {
                     value={formData.password}
                     onChange={handleChange}
                     disabled={loading}
+                    className="bg-noir-dark border-gray-700 text-white"
                   />
                   {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
                 </div>
@@ -117,14 +119,14 @@ const DoctorLogin = () => {
                   </Link>
                 </div>
                 
-                <Button type="submit" className="w-full mt-6" disabled={loading}>
+                <Button type="submit" className="w-full mt-8" disabled={loading}>
                   {loading ? "Iniciando sesión..." : "Iniciar sesión"}
                 </Button>
               </form>
             </CardContent>
             
             <CardFooter className="flex justify-center">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-gray-400">
                 ¿No tienes cuenta?{" "}
                 <Link to="/doctor/register" className="text-primary hover:underline">
                   Regístrate
