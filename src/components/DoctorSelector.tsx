@@ -20,6 +20,7 @@ interface Doctor {
   id: string;
   name: string;
   specialty: string;
+  specialty_id?: string; // Adding this optional property to fix the TypeScript error
 }
 
 const DoctorSelector = ({ specialty, onSelect, initialValue }: DoctorSelectorProps) => {
@@ -54,7 +55,7 @@ const DoctorSelector = ({ specialty, onSelect, initialValue }: DoctorSelectorPro
         // Buscar doctores por el ID de la especialidad
         const { data, error } = await supabase
           .from("doctors")
-          .select("id, name, specialty");
+          .select("id, name, specialty, specialty_id");
 
         if (error) {
           console.error("Error buscando por specialty_id:", error);
@@ -85,7 +86,7 @@ const DoctorSelector = ({ specialty, onSelect, initialValue }: DoctorSelectorPro
         console.log("Buscando todos los doctores para filtrar manualmente");
         const { data, error } = await supabase
           .from("doctors")
-          .select("*");
+          .select("id, name, specialty, specialty_id");
 
         if (error) {
           console.error("Error buscando todos los doctores:", error);
