@@ -95,5 +95,3 @@ export const groupSlotsByDay = (timeSlots: TimeSlotData[]) => {
     return acc;
   }, {} as Record<string, TimeSlotData[]>);
 };
-
-// Helper function to format dates
