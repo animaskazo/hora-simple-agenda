@@ -10,6 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WeeklyCalendar from "@/components/WeeklyCalendar";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, Clock } from "lucide-react";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface DoctorData {
   id: string;
@@ -27,12 +30,26 @@ interface Availability {
   endMinute: number;
 }
 
+interface Appointment {
+  id: string;
+  patient_name: string;
+  patient_email: string;
+  patient_phone: string;
+  patient_rut: string;
+  appointment_date: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  created_at: string;
+}
+
 const DoctorDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [doctorData, setDoctorData] = useState<DoctorData | null>(null);
   const [loading, setLoading] = useState(true);
   const [availabilities, setAvailabilities] = useState<Availability[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -72,6 +89,17 @@ const DoctorDashboard = () => {
           }));
           
           setAvailabilities(formattedAvailability);
+          
+          // Fetch doctor's appointments
+          const { data: appointmentsData, error: appointmentsError } = await supabase
+            .from("appointments")
+            .select("*")
+            .eq("doctor_id", data.id)
+            .order("appointment_date", { ascending: true });
+          
+          if (appointmentsError) throw appointmentsError;
+          
+          setAppointments(appointmentsData);
         }
       } catch (error) {
         console.error("Error fetching doctor data:", error);
@@ -140,6 +168,46 @@ const DoctorDashboard = () => {
     }
   };
 
+  // Formato para visualización de fecha en español
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      return format(date, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return dateStr;
+    }
+  };
+
+  // Función para calcular las próximas citas (hoy y futuras)
+  const getUpcomingAppointments = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return appointments
+      .filter(apt => {
+        const aptDate = new Date(apt.appointment_date);
+        aptDate.setHours(0, 0, 0, 0);
+        return aptDate >= today && apt.status === 'confirmed';
+      })
+      .sort((a, b) => {
+        // Ordenar primero por fecha
+        const dateA = new Date(a.appointment_date);
+        const dateB = new Date(b.appointment_date);
+        
+        if (dateA.getTime() !== dateB.getTime()) {
+          return dateA.getTime() - dateB.getTime();
+        }
+        
+        // Si es el mismo día, ordenar por hora de inicio
+        const [hourA, minuteA] = a.start_time.split(':').map(Number);
+        const [hourB, minuteB] = b.start_time.split(':').map(Number);
+        
+        return (hourA * 60 + minuteA) - (hourB * 60 + minuteB);
+      })
+      .slice(0, 5); // Mostrar solo las 5 próximas citas
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -151,6 +219,8 @@ const DoctorDashboard = () => {
       </div>
     );
   }
+
+  const upcomingAppointments = getUpcomingAppointments();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -190,7 +260,19 @@ const DoctorDashboard = () => {
                   <CardDescription>Citas programadas para los próximos días</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>No hay citas programadas</p>
+                  {upcomingAppointments.length > 0 ? (
+                    <div className="space-y-3">
+                      {upcomingAppointments.map(apt => (
+                        <div key={apt.id} className="p-3 border rounded-lg">
+                          <p className="font-medium">{apt.patient_name}</p>
+                          <p className="text-sm text-muted-foreground">{formatDate(apt.appointment_date)}</p>
+                          <p className="text-sm">{apt.start_time} - {apt.end_time}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p>No hay citas programadas</p>
+                  )}
                 </CardContent>
               </Card>
               
@@ -200,7 +282,17 @@ const DoctorDashboard = () => {
                   <CardDescription>Resumen de actividad</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p>No hay datos disponibles</p>
+                  <div className="space-y-2">
+                    <p><strong>Total de citas:</strong> {appointments.length}</p>
+                    <p><strong>Citas pendientes:</strong> {appointments.filter(a => a.status === 'confirmed').length}</p>
+                    <p><strong>Citas para hoy:</strong> {
+                      appointments.filter(a => {
+                        const today = new Date();
+                        const aptDate = new Date(a.appointment_date);
+                        return aptDate.toDateString() === today.toDateString() && a.status === 'confirmed';
+                      }).length
+                    }</p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -240,9 +332,54 @@ const DoctorDashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">
-                  No hay citas programadas para mostrar
-                </p>
+                {appointments.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Fecha</TableHead>
+                          <TableHead>Horario</TableHead>
+                          <TableHead>Paciente</TableHead>
+                          <TableHead>RUT</TableHead>
+                          <TableHead>Contacto</TableHead>
+                          <TableHead>Estado</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {appointments.map(appointment => (
+                          <TableRow key={appointment.id}>
+                            <TableCell className="font-medium">{formatDate(appointment.appointment_date)}</TableCell>
+                            <TableCell>{appointment.start_time} - {appointment.end_time}</TableCell>
+                            <TableCell>{appointment.patient_name}</TableCell>
+                            <TableCell>{appointment.patient_rut}</TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="text-sm">{appointment.patient_email}</p>
+                                <p className="text-sm text-muted-foreground">{appointment.patient_phone}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                appointment.status === 'confirmed' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : appointment.status === 'cancelled' 
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {appointment.status === 'confirmed' ? 'Confirmada' : 
+                                 appointment.status === 'cancelled' ? 'Cancelada' : 'Completada'}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">
+                    No hay citas programadas para mostrar
+                  </p>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
