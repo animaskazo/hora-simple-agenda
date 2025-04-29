@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Header from "@/components/Header";
@@ -18,13 +19,40 @@ interface TimeSlot {
   available: boolean;
 }
 
+interface LocationState {
+  selectedDoctorId?: string;
+  selectedDoctorName?: string;
+  selectedSpecialty?: string;
+  preselectedSlot?: TimeSlot;
+}
+
 const PatientBooking = () => {
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string>("");
-  const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
-  const [selectedDoctorName, setSelectedDoctorName] = useState<string>("");
-  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const location = useLocation();
+  const state = location.state as LocationState;
+  
+  const [selectedSpecialty, setSelectedSpecialty] = useState<string>(state?.selectedSpecialty || "");
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string>(state?.selectedDoctorId || "");
+  const [selectedDoctorName, setSelectedDoctorName] = useState<string>(state?.selectedDoctorName || "");
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(state?.preselectedSlot || null);
   const [step, setStep] = useState<number>(1);
   const { toast } = useToast();
+
+  // Determinar el paso inicial basado en los datos pre-seleccionados
+  useEffect(() => {
+    if (state) {
+      if (state.selectedSpecialty) {
+        setStep(2);  // Avanzar al paso de selección de médico
+        
+        if (state.selectedDoctorId) {
+          setStep(3);  // Avanzar al paso de selección de horario
+          
+          if (state.preselectedSlot) {
+            setStep(4);  // Avanzar al paso de datos del paciente
+          }
+        }
+      }
+    }
+  }, [state]);
 
   const handleSpecialtySelect = (specialty: string) => {
     setSelectedSpecialty(specialty);

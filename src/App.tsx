@@ -14,6 +14,7 @@ import DoctorLogin from "./pages/DoctorLogin";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import PatientBooking from "./pages/PatientBooking";
 import ConfirmBooking from "./pages/ConfirmBooking";
+import DoctorAvailabilityView from "./pages/DoctorAvailabilityView";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const AppWithProviders = () => (
         <Route path="/doctor/register" element={<DoctorRegister />} />
         <Route path="/doctor/login" element={<DoctorLogin />} />
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+        <Route path="/doctor/:doctorId" element={<DoctorAvailabilityView />} />
         <Route path="/booking" element={<PatientBooking />} />
         <Route path="/booking/confirm" element={<ConfirmBooking />} />
         <Route path="*" element={<NotFound />} />
