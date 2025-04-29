@@ -25,6 +25,9 @@ const WeeklyCalendar = ({ onAvailabilityChange, initialAvailability = [] }: Week
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [startHour, setStartHour] = useState<string>("09:00");
   const [endHour, setEndHour] = useState<string>("18:00");
+  const [currentWeekStartDate, setCurrentWeekStartDate] = useState<Date>(
+    startOfWeek(new Date(), { weekStartsOn: 1 })
+  );
 
   useEffect(() => {
     // Actualizar el estado local cuando cambian las props de disponibilidad inicial
@@ -38,13 +41,15 @@ const WeeklyCalendar = ({ onAvailabilityChange, initialAvailability = [] }: Week
     `${i.toString().padStart(2, '0')}:00`
   );
 
-  // Días de la semana
+  // Días de la semana con fecha actual
   const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const date = addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), i);
+    const date = addDays(currentWeekStartDate, i);
     return {
       number: i + 1,
       name: format(date, 'EEEE', { locale: es }),
       shortName: format(date, 'EEE', { locale: es }),
+      dayOfMonth: format(date, 'd'), // Día del mes como número
+      date: date,
     };
   });
 
@@ -85,6 +90,8 @@ const WeeklyCalendar = ({ onAvailabilityChange, initialAvailability = [] }: Week
     return `${block.startHour.toString().padStart(2, '0')}:${block.startMinute.toString().padStart(2, '0')} - ${block.endHour.toString().padStart(2, '0')}:${block.endMinute.toString().padStart(2, '0')}`;
   };
 
+  const selectedDayInfo = weekDays.find(day => day.number === selectedDay);
+
   return (
     <Card className="w-full">
       <CardContent className="p-6">
@@ -94,17 +101,24 @@ const WeeklyCalendar = ({ onAvailabilityChange, initialAvailability = [] }: Week
               key={day.number}
               variant={day.number === selectedDay ? "default" : "outline"}
               onClick={() => setSelectedDay(day.number)}
-              className="flex-1 min-w-[70px]"
+              className="flex-1 min-w-[70px] flex flex-col items-center"
             >
-              <span className="hidden sm:inline">{day.name}</span>
-              <span className="sm:hidden">{day.shortName}</span>
+              <span className="flex items-center justify-center bg-primary/10 rounded-full w-6 h-6 mb-1 text-sm font-medium">
+                {day.dayOfMonth}
+              </span>
+              <span className="hidden sm:inline capitalize">{day.name}</span>
+              <span className="sm:hidden capitalize">{day.shortName}</span>
             </Button>
           ))}
         </div>
         
         <div className="mt-6 space-y-4">
           <h3 className="text-lg font-medium">
-            Bloques de disponibilidad - {weekDays.find(d => d.number === selectedDay)?.name}
+            Bloques de disponibilidad - {selectedDayInfo ? (
+              <span className="capitalize">
+                {selectedDayInfo.name} {selectedDayInfo.dayOfMonth}
+              </span>
+            ) : 'Seleccione un día'}
           </h3>
           
           {availability
