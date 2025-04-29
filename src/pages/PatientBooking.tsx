@@ -8,7 +8,6 @@ import SpecialtySelector from "@/components/SpecialtySelector";
 import DoctorSelector from "@/components/DoctorSelector";
 import TimeSlotPicker from "@/components/TimeSlotPicker";
 import PatientForm from "@/components/PatientForm";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 
 interface TimeSlot {
@@ -19,20 +18,12 @@ interface TimeSlot {
   available: boolean;
 }
 
-interface Doctor {
-  id: string;
-  name: string;
-  specialty: string;
-}
-
-const STEPS = ["specialty", "doctor", "time", "patient"];
-
 const PatientBooking = () => {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>("");
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
   const [selectedDoctorName, setSelectedDoctorName] = useState<string>("");
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
-  const [activeStep, setActiveStep] = useState("specialty");
+  const [step, setStep] = useState<number>(1);
   const { toast } = useToast();
 
   const handleSpecialtySelect = (specialty: string) => {
@@ -40,32 +31,23 @@ const PatientBooking = () => {
     setSelectedDoctorId("");
     setSelectedDoctorName("");
     setSelectedSlot(null);
-    setActiveStep("doctor");
+    setStep(2);
   };
 
   const handleDoctorSelect = (doctorId: string, doctorName: string) => {
     setSelectedDoctorId(doctorId);
     setSelectedDoctorName(doctorName);
     setSelectedSlot(null);
-    setActiveStep("time");
+    setStep(3);
   };
 
   const handleTimeSlotSelect = (slot: TimeSlot) => {
     setSelectedSlot(slot);
-    setActiveStep("patient");
+    setStep(4);
   };
 
-  const canNavigateTo = (step: string) => {
-    const currentStepIndex = STEPS.indexOf(activeStep);
-    const targetStepIndex = STEPS.indexOf(step);
-    
-    if (targetStepIndex <= currentStepIndex) return true;
-    
-    if (step === "doctor" && selectedSpecialty) return true;
-    if (step === "time" && selectedDoctorId) return true;
-    if (step === "patient" && selectedSlot) return true;
-    
-    return false;
+  const goBack = () => {
+    if (step > 1) setStep(step - 1);
   };
 
   return (
@@ -73,73 +55,79 @@ const PatientBooking = () => {
       <Header />
       
       <main className="flex-1 container mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-6 text-center">Reservar Hora Médica</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">Reservar Hora Médica</h1>
         
-        <div className="max-w-3xl mx-auto">
-          <Tabs value={activeStep} onValueChange={(value) => {
-            if (canNavigateTo(value)) {
-              setActiveStep(value);
-            } else {
-              toast({
-                title: "Completa el paso actual",
-                description: "Debes completar este paso antes de avanzar",
-                variant: "destructive"
-              });
-            }
-          }}>
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="specialty">Especialidad</TabsTrigger>
-              <TabsTrigger value="doctor" disabled={!selectedSpecialty}>Médico</TabsTrigger>
-              <TabsTrigger value="time" disabled={!selectedDoctorId}>Horario</TabsTrigger>
-              <TabsTrigger value="patient" disabled={!selectedSlot}>Datos</TabsTrigger>
-            </TabsList>
-            
-            <Card className="mt-6">
-              <CardContent className="pt-6">
-                <TabsContent value="specialty">
-                  <div>
-                    <h2 className="text-lg font-medium mb-2">Selecciona una especialidad</h2>
-                    <SpecialtySelector 
-                      onSelect={handleSpecialtySelect} 
-                      initialValue={selectedSpecialty}
-                    />
+        <div className="max-w-2xl mx-auto">
+          {/* Progress indicator */}
+          <div className="mb-8">
+            <div className="flex justify-between">
+              <div className="text-sm">Especialidad</div>
+              <div className="text-sm">Médico</div>
+              <div className="text-sm">Horario</div>
+              <div className="text-sm">Datos</div>
+            </div>
+            <div className="h-2 bg-gray-200 rounded-full mt-2">
+              <div 
+                className="h-full bg-primary rounded-full transition-all duration-300"
+                style={{ width: `${(step / 4) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+
+          <Card>
+            <CardContent className="pt-6">
+              {step === 1 && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-medium">Selecciona una especialidad</h2>
+                  <SpecialtySelector 
+                    onSelect={handleSpecialtySelect}
+                    initialValue={selectedSpecialty}
+                  />
+                </div>
+              )}
+              
+              {step === 2 && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-medium">Selecciona un médico</h2>
+                  <DoctorSelector 
+                    specialty={selectedSpecialty}
+                    onSelect={handleDoctorSelect}
+                    initialValue={selectedDoctorId}
+                  />
+                  <div className="flex justify-between mt-6">
+                    <Button variant="outline" onClick={goBack}>Volver</Button>
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="doctor">
-                  <div>
-                    <h2 className="text-lg font-medium mb-2">Selecciona un médico</h2>
-                    <DoctorSelector 
-                      specialty={selectedSpecialty} 
-                      onSelect={handleDoctorSelect}
-                      initialValue={selectedDoctorId}
-                    />
+                </div>
+              )}
+              
+              {step === 3 && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-medium">Selecciona un horario</h2>
+                  <TimeSlotPicker
+                    doctorId={selectedDoctorId}
+                    onSelect={handleTimeSlotSelect}
+                  />
+                  <div className="flex justify-between mt-6">
+                    <Button variant="outline" onClick={goBack}>Volver</Button>
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="time">
-                  <div>
-                    <h2 className="text-lg font-medium mb-2">Selecciona un horario</h2>
-                    <TimeSlotPicker 
-                      doctorId={selectedDoctorId} 
-                      onSelect={handleTimeSlotSelect}
-                    />
+                </div>
+              )}
+              
+              {step === 4 && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-medium">Completa tus datos</h2>
+                  <PatientForm
+                    selectedSlot={selectedSlot}
+                    doctorName={selectedDoctorName}
+                    doctorId={selectedDoctorId}
+                  />
+                  <div className="flex justify-between mt-6">
+                    <Button variant="outline" onClick={goBack}>Volver</Button>
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="patient">
-                  <div>
-                    <h2 className="text-lg font-medium mb-2">Completa tus datos</h2>
-                    <PatientForm 
-                      selectedSlot={selectedSlot}
-                      doctorName={selectedDoctorName}
-                      doctorId={selectedDoctorId}
-                    />
-                  </div>
-                </TabsContent>
-              </CardContent>
-            </Card>
-          </Tabs>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
       

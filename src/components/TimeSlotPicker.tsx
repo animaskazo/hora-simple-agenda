@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { TimeSlotData } from "./time-slot-picker/TimeSlot";
@@ -30,20 +29,11 @@ const TimeSlotPicker = ({ doctorId, onSelect }: TimeSlotPickerProps) => {
   const fetchDoctorAvailability = async (doctorId: string) => {
     setIsLoading(true);
     try {
-      // Primero obtenemos el ID del doctor basado en el ID enviado
-      const { data: doctorData, error: doctorError } = await supabase
-        .from("doctors")
-        .select("id")
-        .eq("id", doctorId)
-        .single();
-
-      if (doctorError) throw doctorError;
-
-      // Obtenemos la disponibilidad del doctor
+      // Get doctor availability
       const { data: availabilityData, error: availabilityError } = await supabase
         .from("doctor_availability")
         .select("*")
-        .eq("doctor_id", doctorData.id);
+        .eq("doctor_id", doctorId);
 
       if (availabilityError) throw availabilityError;
 
@@ -53,7 +43,7 @@ const TimeSlotPicker = ({ doctorId, onSelect }: TimeSlotPickerProps) => {
         return;
       }
 
-      // Convertimos la disponibilidad semanal en slots específicos de fecha/hora
+      // Generate specific date/time slots from availability
       const generatedSlots = generateTimeSlotsFromAvailability(availabilityData);
       setTimeSlots(generatedSlots);
     } catch (error) {
@@ -74,36 +64,32 @@ const TimeSlotPicker = ({ doctorId, onSelect }: TimeSlotPickerProps) => {
   };
 
   if (!doctorId) {
-    return (
-      <EmptyState message="Por favor, selecciona un médico para ver su disponibilidad." />
-    );
+    return <EmptyState message="Por favor, selecciona un médico para ver su disponibilidad." />;
   }
 
   if (isLoading) {
     return <LoadingState />;
   }
 
-  // Agrupar slots por día
+  // Group slots by day
   const slotsByDay = groupSlotsByDay(timeSlots);
   const sortedDates = Object.keys(slotsByDay).sort();
 
+  if (sortedDates.length === 0) {
+    return <EmptyState message="No hay horarios disponibles para este médico." />;
+  }
+
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Horarios disponibles</h3>
-      
-      {sortedDates.length === 0 ? (
-        <EmptyState message="No hay horarios disponibles para este médico." />
-      ) : (
-        sortedDates.map((dateKey) => (
-          <DateGroup
-            key={dateKey}
-            dateKey={dateKey}
-            slots={slotsByDay[dateKey]}
-            selectedSlotId={selectedSlot}
-            onSelectSlot={handleSelectSlot}
-          />
-        ))
-      )}
+      {sortedDates.map((dateKey) => (
+        <DateGroup
+          key={dateKey}
+          dateKey={dateKey}
+          slots={slotsByDay[dateKey]}
+          selectedSlotId={selectedSlot}
+          onSelectSlot={handleSelectSlot}
+        />
+      ))}
     </div>
   );
 };

@@ -15,34 +15,20 @@ export const DateGroup = ({ dateKey, slots, selectedSlotId, onSelectSlot }: Date
   const sortedSlots = availableSlots.sort((a, b) => a.startTime.localeCompare(b.startTime));
   
   const date = new Date(dateKey);
-  const dayNumber = format(date, "d");
-  const dayName = format(date, "EEEE", { locale: es });
+  const formattedDate = format(date, "EEEE d 'de' MMMM", { locale: es });
   
   return (
     <div className="border rounded-md p-4">
-      <h4 className="font-medium mb-2 flex items-center">
-        <span className="bg-primary text-white w-8 h-8 flex items-center justify-center rounded-full mr-2 text-base">
-          {dayNumber}
-        </span>
-        <span className="capitalize">
-          {dayName}, {format(date, "d 'de' MMMM 'de' yyyy", { locale: es })}
-        </span>
-      </h4>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-        {sortedSlots.length > 0 ? (
-          sortedSlots.map((slot) => (
-            <TimeSlot
-              key={slot.id}
-              slot={slot}
-              isSelected={selectedSlotId === slot.id}
-              onSelect={onSelectSlot}
-            />
-          ))
-        ) : (
-          <div className="col-span-full text-sm text-muted-foreground">
-            No hay horarios disponibles para este día.
-          </div>
-        )}
+      <h4 className="font-medium mb-3 capitalize">{formattedDate}</h4>
+      <div className="grid grid-cols-3 gap-2">
+        {sortedSlots.map((slot) => (
+          <TimeSlot
+            key={slot.id}
+            slot={slot}
+            isSelected={selectedSlotId === slot.id}
+            onSelect={onSelectSlot}
+          />
+        ))}
       </div>
     </div>
   );
