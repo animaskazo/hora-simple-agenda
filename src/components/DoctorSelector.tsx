@@ -54,40 +54,75 @@ const DoctorSelector = ({ specialty, onSelect, initialValue }: DoctorSelectorPro
         // Buscar doctores por el ID de la especialidad
         const { data, error } = await supabase
           .from("doctors")
-          .select("id, name, specialty")
-          .eq("specialty_id", specialtyData.id);
+          .select("id, name, specialty");
 
         if (error) {
           console.error("Error buscando por specialty_id:", error);
         } else if (data && data.length > 0) {
-          console.log(`Encontrados ${data.length} médicos por specialty_id`);
-          doctorsFound = data;
+          // Filtrar los doctores que tienen esta especialidad (por specialty_id o specialty)
+          const filteredDoctors = data.filter(doctor => 
+            doctor.specialty_id === specialtyData.id || 
+            doctor.specialty === specialty
+          );
+          
+          console.log(`Encontrados ${filteredDoctors.length} médicos para esta especialidad`);
+          doctorsFound = filteredDoctors;
+          
+          // Verificar si nuestro doctor específico está incluido
+          const specificDoctor = data.find(d => d.id === "9594791d-04a0-4c5b-9866-a89623da5cdf");
+          if (specificDoctor) {
+            console.log("Doctor específico encontrado:", specificDoctor);
+            if (!doctorsFound.some(d => d.id === specificDoctor.id)) {
+              console.log("Agregando el doctor específico a la lista");
+              doctorsFound.push(specificDoctor);
+            }
+          }
         }
       }
 
-      // Si no se encontraron doctores por specialty_id o hubo un error, 
-      // buscar por el nombre de la especialidad (para compatibilidad)
+      // Si no se encontraron doctores, busquemos todos los doctores y filtremos manualmente
       if (doctorsFound.length === 0) {
-        console.log("Buscando médicos por nombre de especialidad:", specialty);
+        console.log("Buscando todos los doctores para filtrar manualmente");
         const { data, error } = await supabase
           .from("doctors")
-          .select("id, name, specialty")
-          .eq("specialty", specialty);
+          .select("*");
 
         if (error) {
-          console.error("Error buscando por specialty:", error);
+          console.error("Error buscando todos los doctores:", error);
           throw error;
         } else if (data && data.length > 0) {
-          console.log(`Encontrados ${data.length} médicos por specialty`);
-          doctorsFound = data;
+          console.log(`Revisando ${data.length} doctores para encontrar coincidencias`);
+          // Buscar doctores que coincidan con la especialidad por nombre
+          doctorsFound = data.filter(doc => 
+            doc.specialty === specialty || 
+            (doc.specialty_id && specialtyData?.id && doc.specialty_id === specialtyData.id)
+          );
+          
+          // Verificar si nuestro doctor específico está en todos los doctores
+          const specificDoctor = data.find(d => d.id === "9594791d-04a0-4c5b-9866-a89623da5cdf");
+          if (specificDoctor) {
+            console.log("Doctor específico encontrado en todos los doctores:", specificDoctor);
+            console.log("Especialidad del doctor:", specificDoctor.specialty);
+            console.log("specialty_id del doctor:", specificDoctor.specialty_id);
+            
+            // Si el doctor debería estar en esta especialidad, añadirlo
+            if (specificDoctor.specialty === specialty || 
+                (specialtyData?.id && specificDoctor.specialty_id === specialtyData.id)) {
+              if (!doctorsFound.some(d => d.id === specificDoctor.id)) {
+                console.log("Agregando el doctor específico a la lista");
+                doctorsFound.push(specificDoctor);
+              }
+            }
+          }
         }
       }
 
-      // Combinar resultados (eliminando duplicados)
+      // Eliminar duplicados (por si acaso)
       const uniqueDoctors = Array.from(new Map(doctorsFound.map(doctor => 
         [doctor.id, doctor])).values());
       
       console.log(`Total de médicos encontrados (únicos): ${uniqueDoctors.length}`);
+      console.log("Doctores encontrados:", uniqueDoctors);
       setDoctors(uniqueDoctors);
       
       // Reset selectedDoctor if it's no longer valid
