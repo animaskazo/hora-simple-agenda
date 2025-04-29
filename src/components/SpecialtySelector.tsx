@@ -16,6 +16,11 @@ interface SpecialtySelectorProps {
   initialValue?: string;
 }
 
+interface Specialty {
+  name: string;
+  numeric_id: number;
+}
+
 const SpecialtySelector = ({ onSelect, initialValue }: SpecialtySelectorProps) => {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>(initialValue || "");
   
@@ -24,11 +29,11 @@ const SpecialtySelector = ({ onSelect, initialValue }: SpecialtySelectorProps) =
     queryKey: ["specialties"],
     queryFn: async () => {
       console.log("Fetching specialties from database...");
-      // Cambiamos para consultar la nueva tabla de especialidades
+      // Obtenemos especialidades ordenadas por numeric_id para mostrarlas en orden lógico
       const { data, error } = await supabase
         .from("specialties")
-        .select("name")
-        .order("name");
+        .select("name, numeric_id")
+        .order("numeric_id");
 
       if (error) {
         console.error("Supabase error:", error);

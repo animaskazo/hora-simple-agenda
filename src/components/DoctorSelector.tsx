@@ -40,17 +40,17 @@ const DoctorSelector = ({ specialty, onSelect, initialValue }: DoctorSelectorPro
     try {
       console.log("Buscando médicos para la especialidad:", specialty);
       
-      // Primer intento: buscar por el ID de la especialidad en la tabla specialties
+      // Buscar especialidad por nombre para obtener su ID
       const { data: specialtyData, error: specialtyError } = await supabase
         .from("specialties")
-        .select("id")
+        .select("id, numeric_id")
         .eq("name", specialty)
         .maybeSingle();
 
       let doctorsFound: Doctor[] = [];
 
       if (specialtyData?.id) {
-        console.log("Especialidad encontrada con ID:", specialtyData.id);
+        console.log("Especialidad encontrada:", specialtyData);
         // Buscar doctores por el ID de la especialidad
         const { data, error } = await supabase
           .from("doctors")
@@ -65,7 +65,8 @@ const DoctorSelector = ({ specialty, onSelect, initialValue }: DoctorSelectorPro
         }
       }
 
-      // Si no se encontraron doctores por specialty_id o hubo un error, buscar por el nombre de la especialidad
+      // Si no se encontraron doctores por specialty_id o hubo un error, 
+      // buscar por el nombre de la especialidad (para compatibilidad)
       if (doctorsFound.length === 0) {
         console.log("Buscando médicos por nombre de especialidad:", specialty);
         const { data, error } = await supabase
