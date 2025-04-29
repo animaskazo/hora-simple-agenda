@@ -24,9 +24,11 @@ const SpecialtySelector = ({ onSelect, initialValue }: SpecialtySelectorProps) =
     queryKey: ["specialties"],
     queryFn: async () => {
       console.log("Fetching specialties from database...");
+      // Cambiamos para consultar la nueva tabla de especialidades
       const { data, error } = await supabase
-        .from("doctors")
-        .select("specialty");
+        .from("specialties")
+        .select("name")
+        .order("name");
 
       if (error) {
         console.error("Supabase error:", error);
@@ -40,11 +42,11 @@ const SpecialtySelector = ({ onSelect, initialValue }: SpecialtySelectorProps) =
 
       console.log("Specialties fetched:", data);
       
-      // Extraemos y ordenamos las especialidades únicas
-      const uniqueSpecialties = [...new Set(data.map(item => item.specialty))].sort();
-      console.log("Unique specialties:", uniqueSpecialties);
+      // Extraemos los nombres de las especialidades
+      const specialtyNames = data.map(item => item.name);
+      console.log("Specialty names:", specialtyNames);
       
-      return uniqueSpecialties;
+      return specialtyNames;
     },
     // En caso de error, muestra un toast y devuelve un fallback
     meta: {

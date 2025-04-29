@@ -106,6 +106,7 @@ export type Database = {
           id: string
           name: string
           specialty: string
+          specialty_id: string | null
           user_id: string
         }
         Insert: {
@@ -113,6 +114,7 @@ export type Database = {
           id?: string
           name: string
           specialty: string
+          specialty_id?: string | null
           user_id: string
         }
         Update: {
@@ -120,7 +122,37 @@ export type Database = {
           id?: string
           name?: string
           specialty?: string
+          specialty_id?: string | null
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctors_specialty_id_fkey"
+            columns: ["specialty_id"]
+            isOneToOne: false
+            referencedRelation: "specialties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      specialties: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
         }
         Relationships: []
       }

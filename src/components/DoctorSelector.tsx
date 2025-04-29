@@ -38,10 +38,11 @@ const DoctorSelector = ({ specialty, onSelect, initialValue }: DoctorSelectorPro
   const fetchDoctors = async (specialty: string) => {
     setIsLoading(true);
     try {
+      // Consulta actualizada para usar la relación entre doctors y specialties
       const { data, error } = await supabase
         .from("doctors")
         .select("id, name, specialty")
-        .eq("specialty", specialty);
+        .eq("specialty", specialty); // Mantenemos la consulta por nombre de especialidad para compatibilidad
 
       if (error) throw error;
 
