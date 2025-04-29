@@ -27,17 +27,29 @@ const SpecialtySelector = ({ onSelect, initialValue }: SpecialtySelectorProps) =
   const fetchSpecialties = async () => {
     setIsLoading(true);
     try {
+      console.log("Fetching specialties from database...");
       // Obtenemos las especialidades únicas de los doctores
       const { data, error } = await supabase
         .from("doctors")
-        .select("specialty")
-        .order("specialty");
+        .select("specialty");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error:", error);
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        console.log("No specialties found in database");
+        throw new Error("No se encontraron especialidades");
+      }
+
+      console.log("Specialties fetched:", data);
 
       // Extraemos las especialidades únicas
       const uniqueSpecialties = [...new Set(data.map(item => item.specialty))];
-      setSpecialties(uniqueSpecialties);
+      console.log("Unique specialties:", uniqueSpecialties);
+      
+      setSpecialties(uniqueSpecialties.sort());
     } catch (error) {
       console.error("Error fetching specialties:", error);
       toast({
@@ -65,17 +77,23 @@ const SpecialtySelector = ({ onSelect, initialValue }: SpecialtySelectorProps) =
   return (
     <div className="w-full">
       <Select onValueChange={handleSelect} value={selectedSpecialty} disabled={isLoading}>
-        <SelectTrigger>
+        <SelectTrigger className="bg-white">
           <SelectValue 
             placeholder={isLoading ? "Cargando especialidades..." : "Seleccionar especialidad"} 
           />
         </SelectTrigger>
-        <SelectContent>
-          {specialties.map((specialty) => (
-            <SelectItem key={specialty} value={specialty}>
-              {specialty}
+        <SelectContent className="bg-white">
+          {specialties.length > 0 ? (
+            specialties.map((specialty) => (
+              <SelectItem key={specialty} value={specialty}>
+                {specialty}
+              </SelectItem>
+            ))
+          ) : (
+            <SelectItem value="no-options" disabled>
+              {isLoading ? "Cargando..." : "No hay especialidades disponibles"}
             </SelectItem>
-          ))}
+          )}
         </SelectContent>
       </Select>
     </div>
