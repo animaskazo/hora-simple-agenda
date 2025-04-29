@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface PatientFormProps {
   selectedSlot: {
@@ -13,10 +15,12 @@ interface PatientFormProps {
     endTime: string;
   } | null;
   doctorName: string;
+  doctorId: string;
 }
 
-const PatientForm = ({ selectedSlot, doctorName }: PatientFormProps) => {
+const PatientForm = ({ selectedSlot, doctorName, doctorId }: PatientFormProps) => {
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     rut: "",
@@ -62,12 +66,35 @@ const PatientForm = ({ selectedSlot, doctorName }: PatientFormProps) => {
     return !Object.values(newErrors).some(error => error);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateForm()) {
-      // En una aplicación real aquí se enviaría la reserva al backend
-      // Para esta demo, simulamos que la reserva fue exitosa y redirigimos
+    if (!validateForm() || !selectedSlot) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Convertir la fecha a formato YYYY-MM-DD para PostgreSQL
+      const appointmentDate = new Date(selectedSlot.date)
+        .toISOString()
+        .split("T")[0];
+
+      // Crear la cita en la base de datos
+      const { error } = await supabase
+        .from("appointments")
+        .insert({
+          doctor_id: doctorId,
+          patient_name: formData.name,
+          patient_rut: formData.rut,
+          patient_email: formData.email,
+          patient_phone: formData.phone,
+          appointment_date: appointmentDate,
+          start_time: selectedSlot.startTime,
+          end_time: selectedSlot.endTime
+        });
+
+      if (error) throw error;
+
+      // Redirigir a la página de confirmación
       navigate("/booking/confirm", { 
         state: { 
           patient: formData,
@@ -75,6 +102,15 @@ const PatientForm = ({ selectedSlot, doctorName }: PatientFormProps) => {
           doctor: doctorName
         } 
       });
+    } catch (error) {
+      console.error("Error al guardar la cita:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar la cita. Por favor intenta nuevamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -139,8 +175,8 @@ const PatientForm = ({ selectedSlot, doctorName }: PatientFormProps) => {
           {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
         </div>
         
-        <Button type="submit" className="w-full mt-6">
-          Confirmar reserva
+        <Button type="submit" className="w-full mt-6" disabled={isSubmitting}>
+          {isSubmitting ? "Guardando..." : "Confirmar reserva"}
         </Button>
       </form>
     </div>

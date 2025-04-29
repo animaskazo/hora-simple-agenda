@@ -30,26 +30,22 @@ const STEPS = ["specialty", "doctor", "time", "patient"];
 const PatientBooking = () => {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>("");
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>("");
+  const [selectedDoctorName, setSelectedDoctorName] = useState<string>("");
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [activeStep, setActiveStep] = useState("specialty");
   const { toast } = useToast();
 
-  const selectedDoctor = selectedDoctorId 
-    ? { id: selectedDoctorId, name: "", specialty: "" } // El nombre se obtendrá del componente DoctorSelector
-    : null;
-
   const handleSpecialtySelect = (specialty: string) => {
     setSelectedSpecialty(specialty);
     setSelectedDoctorId("");
+    setSelectedDoctorName("");
     setSelectedSlot(null);
     setActiveStep("doctor");
   };
 
   const handleDoctorSelect = (doctorId: string, doctorName: string) => {
     setSelectedDoctorId(doctorId);
-    if (selectedDoctor) {
-      selectedDoctor.name = doctorName;
-    }
+    setSelectedDoctorName(doctorName);
     setSelectedSlot(null);
     setActiveStep("time");
   };
@@ -136,7 +132,8 @@ const PatientBooking = () => {
                     <h2 className="text-lg font-medium mb-2">Completa tus datos</h2>
                     <PatientForm 
                       selectedSlot={selectedSlot}
-                      doctorName={selectedDoctor?.name || ""}
+                      doctorName={selectedDoctorName}
+                      doctorId={selectedDoctorId}
                     />
                   </div>
                 </TabsContent>
