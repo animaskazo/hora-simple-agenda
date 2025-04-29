@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { TimeSlotData } from "@/components/time-slot-picker/TimeSlot";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 // Define a type for the doctor data from the find_doctor_by_email function
 interface DoctorData {
@@ -15,7 +15,7 @@ interface DoctorData {
   name: string;
   specialty: string;
   user_id: string;
-  specialty_id: string;
+  specialty_id: string | null;
 }
 
 const DoctorAvailabilityView = () => {
@@ -40,56 +40,75 @@ const DoctorAvailabilityView = () => {
         if (email) {
           console.log(`Looking up doctor by email: ${email}`);
           
-          // First, get the doctor that matches this email through a direct join
-          const { data, error } = await supabase
+          // Call the find_doctor_by_email RPC function
+          const { data, error: rpcError } = await supabase
             .rpc('find_doctor_by_email', { email_param: email });
             
-          if (error) {
-            console.error("Error finding doctor by email:", error);
-            throw new Error(`Error al buscar médico por email: ${error.message}`);
+          if (rpcError) {
+            console.error("Error finding doctor by email:", rpcError);
+            throw new Error(`Error al buscar médico por email: ${rpcError.message}`);
           }
           
           console.log("Doctor lookup by email result:", data);
           
-          // Check if we got any results and data is an array
-          if (!data || (Array.isArray(data) && data.length === 0)) {
+          if (!data) {
             throw new Error(`No se encontró ningún médico con el email: ${email}`);
           }
           
-          // If data is an array, take the first element
-          doctorData = Array.isArray(data) ? data[0] : data;
+          // Check if data is an array and contains results
+          if (Array.isArray(data)) {
+            if (data.length === 0) {
+              throw new Error(`No se encontró ningún médico con el email: ${email}`);
+            }
+            doctorData = data[0]; // Take the first doctor if there are multiple
+          } else {
+            doctorData = data;
+          }
         } 
         // Otherwise, look up by doctor ID
         else if (doctorId) {
           console.log(`Looking up doctor by ID: ${doctorId}`);
           
-          const { data, error } = await supabase
+          const { data: doctorResult, error: doctorError } = await supabase
             .from("doctors")
             .select("*")
             .eq("id", doctorId)
             .single();
             
-          if (error) {
-            console.error("Error fetching doctor by ID:", error);
-            throw new Error(`Error al buscar médico por ID: ${error.message}`);
+          if (doctorError) {
+            console.error("Error fetching doctor by ID:", doctorError);
+            throw new Error(`Error al buscar médico por ID: ${doctorError.message}`);
           }
           
-          console.log("Doctor lookup by ID result:", data);
+          console.log("Doctor lookup by ID result:", doctorResult);
           
-          if (!data) {
+          if (!doctorResult) {
             throw new Error(`No se encontró ningún médico con el ID: ${doctorId}`);
           }
           
-          doctorData = data;
+          doctorData = doctorResult;
         } 
         else {
           throw new Error("No se proporcionó email ni ID del médico");
         }
         
+        // Show success toast
+        toast({
+          title: "Médico encontrado",
+          description: `Se ha encontrado el médico: ${doctorData.name}`,
+        });
+        
         setDoctor(doctorData);
       } catch (error: any) {
         console.error("Error fetching doctor data:", error);
         setError(error.message || "Error al cargar los datos del médico");
+        
+        // Show error toast
+        toast({
+          title: "Error",
+          description: error.message || "Error al cargar los datos del médico",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
