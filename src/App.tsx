@@ -16,7 +16,14 @@ import PatientBooking from "./pages/PatientBooking";
 import ConfirmBooking from "./pages/ConfirmBooking";
 import DoctorAvailabilityView from "./pages/DoctorAvailabilityView";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const AppWithProviders = () => (
   <QueryClientProvider client={queryClient}>
@@ -28,6 +35,7 @@ const AppWithProviders = () => (
         <Route path="/doctor/register" element={<DoctorRegister />} />
         <Route path="/doctor/login" element={<DoctorLogin />} />
         <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+        {/* Ensure the more specific email route comes first */}
         <Route path="/doctor/email/:email" element={<DoctorAvailabilityView />} />
         <Route path="/doctor/:doctorId" element={<DoctorAvailabilityView />} />
         <Route path="/booking" element={<PatientBooking />} />

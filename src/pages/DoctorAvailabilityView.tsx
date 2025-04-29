@@ -1,194 +1,168 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import TimeSlotPicker from "@/components/TimeSlotPicker";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { TimeSlotData } from "@/components/time-slot-picker/TimeSlot";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft } from "lucide-react";
 
 const DoctorAvailabilityView = () => {
   const { doctorId, email } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [doctorName, setDoctorName] = useState<string>("");
-  const [doctorSpecialty, setDoctorSpecialty] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<boolean>(false);
-  const [foundDoctorId, setFoundDoctorId] = useState<string | null>(null);
-  
+  const [doctor, setDoctor] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlotData | null>(null);
+
   useEffect(() => {
-    const fetchDoctorDetails = async () => {
+    console.log("DoctorAvailabilityView: Initializing with params:", { doctorId, email });
+    
+    const fetchDoctorData = async () => {
+      setIsLoading(true);
+      setError(null);
+      
       try {
-        setLoading(true);
-        console.log("Fetching doctor details. doctorId:", doctorId, "email:", email);
-        
-        // Case 1: Using Doctor ID directly
-        if (doctorId) {
+        let doctorData = null;
+
+        // Check if we have an email parameter
+        if (email) {
+          console.log(`Looking up doctor by email: ${email}`);
+          
+          // First, get the doctor that matches this email through a direct join
+          const { data, error } = await supabase
+            .rpc('find_doctor_by_email', { email_param: email });
+            
+          if (error) {
+            console.error("Error finding doctor by email:", error);
+            throw new Error(`Error al buscar médico por email: ${error.message}`);
+          }
+          
+          console.log("Doctor lookup by email result:", data);
+          
+          if (!data || data.length === 0) {
+            throw new Error(`No se encontró ningún médico con el email: ${email}`);
+          }
+          
+          doctorData = data[0];
+        } 
+        // Otherwise, look up by doctor ID
+        else if (doctorId) {
+          console.log(`Looking up doctor by ID: ${doctorId}`);
+          
           const { data, error } = await supabase
             .from("doctors")
-            .select("id, name, specialty")
+            .select("*")
             .eq("id", doctorId)
-            .maybeSingle();
-
+            .single();
+            
           if (error) {
             console.error("Error fetching doctor by ID:", error);
-            throw error;
+            throw new Error(`Error al buscar médico por ID: ${error.message}`);
           }
-
-          if (!data) {
-            setError(true);
-            toast({
-              title: "Error",
-              description: "No se encontró el médico solicitado con ese ID",
-              variant: "destructive",
-            });
-            setLoading(false);
-            return;
-          }
-
-          console.log("Found doctor by ID:", data);
-          setDoctorName(data.name);
-          setDoctorSpecialty(data.specialty);
-          setFoundDoctorId(data.id);
-          setLoading(false);
-          return;
-        } 
-        
-        // Case 2: Using Email
-        else if (email) {
-          console.log("Looking up doctor by email:", email);
           
-          // Find doctor by email in doctors table
-          const { data, error } = await supabase
-            .from("doctors")
-            .select("id, name, specialty")
-            .eq("user_id", email)
-            .maybeSingle();
-
-          if (error) {
-            console.error("Error fetching doctor by email:", error);
-            throw error;
-          }
+          console.log("Doctor lookup by ID result:", data);
           
           if (!data) {
-            setError(true);
-            toast({
-              title: "Error",
-              description: `No se encontró ningún médico con el email ${email}`,
-              variant: "destructive",
-            });
-            setLoading(false);
-            return;
+            throw new Error(`No se encontró ningún médico con el ID: ${doctorId}`);
           }
           
-          console.log("Found doctor by email:", data);
-          setDoctorName(data.name);
-          setDoctorSpecialty(data.specialty);
-          setFoundDoctorId(data.id);
-          setLoading(false);
-          return;
+          doctorData = data;
         } 
-        
-        // No identifier provided
         else {
-          setError(true);
-          toast({
-            title: "Error",
-            description: "No se proporcionó un identificador válido para el médico",
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
+          throw new Error("No se proporcionó email ni ID del médico");
         }
-      } catch (error) {
-        console.error("Error al buscar médico:", error);
-        setError(true);
-        toast({
-          title: "Error",
-          description: "No se pudo cargar la información del médico",
-          variant: "destructive",
-        });
+        
+        setDoctor(doctorData);
+      } catch (error: any) {
+        console.error("Error fetching doctor data:", error);
+        setError(error.message || "Error al cargar los datos del médico");
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchDoctorDetails();
-  }, [doctorId, email, toast]);
+    fetchDoctorData();
+  }, [doctorId, email]);
 
-  const handleSelectSlot = (slot: any) => {
-    // Redirigir al formulario de reserva con los datos del slot y doctor preseleccionados
-    navigate(`/booking`, { 
-      state: { 
-        selectedDoctorId: foundDoctorId || doctorId,
-        selectedDoctorName: doctorName,
-        selectedSpecialty: doctorSpecialty,
-        preselectedSlot: slot
-      } 
-    });
+  const handleSelectSlot = (slot: TimeSlotData) => {
+    setSelectedSlot(slot);
   };
 
-  if (error) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 container mx-auto py-8 px-4">
-          <div className="max-w-2xl mx-auto">
-            <Card>
-              <CardContent className="pt-6">
-                <h2 className="text-lg font-medium text-center">Médico no encontrado</h2>
-                <p className="text-center mt-4">
-                  El médico solicitado no existe o no está disponible.
-                </p>
-                <div className="flex justify-center mt-6">
-                  <Button onClick={() => navigate('/')}>
-                    Volver al inicio
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
+  const handleBookAppointment = () => {
+    if (selectedSlot && doctor) {
+      navigate("/booking", {
+        state: {
+          selectedDoctorId: doctor.id,
+          selectedDoctorName: doctor.name,
+          selectedSpecialty: doctor.specialty,
+          preselectedSlot: selectedSlot
+        }
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       
       <main className="flex-1 container mx-auto py-8 px-4">
-        <Button 
-          variant="ghost" 
-          className="mb-4 flex items-center gap-1"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="h-4 w-4" /> Volver
-        </Button>
-        
         <div className="max-w-2xl mx-auto">
           <Card>
             <CardContent className="pt-6">
-              {loading ? (
-                <div className="py-8 text-center">
+              {isLoading ? (
+                <div className="text-center py-8">
                   <p>Cargando información del médico...</p>
                 </div>
-              ) : (
-                <>
-                  <h1 className="text-2xl font-bold mb-2 text-center">Dr. {doctorName}</h1>
-                  <h2 className="text-lg text-gray-600 mb-6 text-center">{doctorSpecialty}</h2>
+              ) : error ? (
+                <div className="text-center py-8">
+                  <p className="text-destructive">{error}</p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate("/")}
+                    className="mt-4"
+                  >
+                    Volver a Inicio
+                  </Button>
+                </div>
+              ) : doctor ? (
+                <div className="space-y-6">
+                  <div>
+                    <h1 className="text-2xl font-bold mb-2">{doctor.name}</h1>
+                    <p className="text-muted-foreground">{doctor.specialty}</p>
+                  </div>
                   
-                  <h3 className="font-medium mb-4">Horarios disponibles:</h3>
-                  <TimeSlotPicker
-                    doctorId={foundDoctorId || doctorId || ""}
-                    onSelect={handleSelectSlot}
-                  />
-                </>
+                  <div className="border-t pt-6">
+                    <h2 className="text-xl font-medium mb-4">Horarios Disponibles</h2>
+                    <TimeSlotPicker 
+                      doctorId={doctor.id} 
+                      onSelect={handleSelectSlot} 
+                    />
+                  </div>
+                  
+                  {selectedSlot && (
+                    <div className="border-t pt-6">
+                      <Button
+                        className="w-full"
+                        onClick={handleBookAppointment}
+                      >
+                        Reservar Cita
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-destructive">No se encontró información del médico</p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate("/")}
+                    className="mt-4"
+                  >
+                    Volver a Inicio
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -19,21 +19,22 @@ const TimeSlotPicker = ({ doctorId, onSelect }: TimeSlotPickerProps) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (doctorId) {
-      console.log("TimeSlotPicker: Fetching availability for doctor ID:", doctorId);
-      fetchDoctorAvailability(doctorId);
-    } else {
-      console.log("TimeSlotPicker: No doctor ID provided");
+    if (!doctorId) {
+      console.log("TimeSlotPicker: No doctor ID provided, cannot fetch availability");
       setTimeSlots([]);
       setIsLoading(false);
+      return;
     }
+    
+    console.log(`TimeSlotPicker: Fetching availability for doctor ID: "${doctorId}"`);
+    fetchDoctorAvailability(doctorId);
   }, [doctorId]);
 
   const fetchDoctorAvailability = async (doctorId: string) => {
     setIsLoading(true);
     try {
       // Get doctor availability
-      console.log("Fetching doctor availability for ID:", doctorId);
+      console.log(`Fetching doctor availability for ID: "${doctorId}"`);
       const { data: availabilityData, error: availabilityError } = await supabase
         .from("doctor_availability")
         .select("*")
@@ -44,10 +45,10 @@ const TimeSlotPicker = ({ doctorId, onSelect }: TimeSlotPickerProps) => {
         throw availabilityError;
       }
 
-      console.log("Availability data:", availabilityData);
+      console.log(`Availability data response:`, availabilityData);
 
       if (!availabilityData || availabilityData.length === 0) {
-        console.log("No availability data found for doctor ID:", doctorId);
+        console.log(`No availability data found for doctor ID: "${doctorId}"`);
         setTimeSlots([]);
         setIsLoading(false);
         return;
@@ -55,7 +56,7 @@ const TimeSlotPicker = ({ doctorId, onSelect }: TimeSlotPickerProps) => {
 
       // Generate specific date/time slots from availability
       const generatedSlots = generateTimeSlotsFromAvailability(availabilityData);
-      console.log("Generated time slots:", generatedSlots);
+      console.log(`Generated ${generatedSlots.length} time slots from availability data`);
       setTimeSlots(generatedSlots);
     } catch (error) {
       console.error("Error fetching doctor availability:", error);
