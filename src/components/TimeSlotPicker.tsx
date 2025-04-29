@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { format, addDays, startOfWeek, setHours, setMinutes, isSameDay } from "date-fns";
@@ -198,7 +197,10 @@ const TimeSlotPicker = ({ doctorId, onSelect }: TimeSlotPickerProps) => {
           .map(([dateKey, slots]) => (
             <div key={dateKey} className="border rounded-md p-4">
               <h4 className="font-medium mb-2">
-                {format(new Date(dateKey), "EEEE d 'de' MMMM", { locale: es })}
+                <span className="bg-primary text-white px-2 py-1 rounded-full mr-2 text-sm">
+                  {format(new Date(dateKey), "d")}
+                </span>
+                {format(new Date(dateKey), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                 {slots
