@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 
 interface SpecialtySelectorProps {
@@ -17,18 +18,12 @@ interface SpecialtySelectorProps {
 
 const SpecialtySelector = ({ onSelect, initialValue }: SpecialtySelectorProps) => {
   const [selectedSpecialty, setSelectedSpecialty] = useState<string>(initialValue || "");
-  const [specialties, setSpecialties] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchSpecialties();
-  }, []);
-
-  const fetchSpecialties = async () => {
-    setIsLoading(true);
-    try {
+  
+  // Utiliza React Query para manejar el estado de carga y caché de las especialidades
+  const { data: specialties = [], isLoading, error } = useQuery({
+    queryKey: ["specialties"],
+    queryFn: async () => {
       console.log("Fetching specialties from database...");
-      // Obtenemos las especialidades únicas de los doctores
       const { data, error } = await supabase
         .from("doctors")
         .select("specialty");
@@ -40,39 +35,56 @@ const SpecialtySelector = ({ onSelect, initialValue }: SpecialtySelectorProps) =
 
       if (!data || data.length === 0) {
         console.log("No specialties found in database");
-        throw new Error("No se encontraron especialidades");
+        return [];
       }
 
       console.log("Specialties fetched:", data);
-
-      // Extraemos las especialidades únicas
-      const uniqueSpecialties = [...new Set(data.map(item => item.specialty))];
+      
+      // Extraemos y ordenamos las especialidades únicas
+      const uniqueSpecialties = [...new Set(data.map(item => item.specialty))].sort();
       console.log("Unique specialties:", uniqueSpecialties);
       
-      setSpecialties(uniqueSpecialties.sort());
-    } catch (error) {
-      console.error("Error fetching specialties:", error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar las especialidades",
-        variant: "destructive",
-      });
-      // Fallback a especialidades predefinidas en caso de error
-      setSpecialties([
-        "Medicina General",
-        "Pediatría",
-        "Ginecología",
-        "Dermatología",
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return uniqueSpecialties;
+    },
+    // En caso de error, muestra un toast y devuelve un fallback
+    meta: {
+      onError: (error: Error) => {
+        console.error("Error loading specialties:", error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar las especialidades",
+          variant: "destructive",
+        });
+      }
+    },
+    // Si falla, retornamos un array vacío
+    placeholderData: [],
+    // Valores por defecto si no hay datos o hay error
+    initialData: [],
+  });
+  
+  // Utiliza los valores por defecto si no hay especialidades
+  const fallbackSpecialties = [
+    "Medicina General",
+    "Pediatría",
+    "Ginecología",
+    "Dermatología",
+  ];
+  
+  // Si no hay especialidades en la base de datos, usa las predefinidas
+  const displayedSpecialties = specialties.length > 0 ? specialties : fallbackSpecialties;
 
   const handleSelect = (value: string) => {
     setSelectedSpecialty(value);
     onSelect(value);
   };
+
+  // Si había un valor inicial pero ya no es válido con las nuevas especialidades
+  useEffect(() => {
+    if (selectedSpecialty && !displayedSpecialties.includes(selectedSpecialty)) {
+      setSelectedSpecialty("");
+    }
+  }, [displayedSpecialties, selectedSpecialty]);
 
   return (
     <div className="w-full">
@@ -83,8 +95,8 @@ const SpecialtySelector = ({ onSelect, initialValue }: SpecialtySelectorProps) =
           />
         </SelectTrigger>
         <SelectContent className="bg-white">
-          {specialties.length > 0 ? (
-            specialties.map((specialty) => (
+          {displayedSpecialties.length > 0 ? (
+            displayedSpecialties.map((specialty) => (
               <SelectItem key={specialty} value={specialty}>
                 {specialty}
               </SelectItem>
