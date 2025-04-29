@@ -67,12 +67,12 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Añadimos tonos negros personalizados
+				// Tonos negros personalizados para texto
 				noir: {
-					DEFAULT: '#1A1F2C',
+					DEFAULT: '#000000',
 					foreground: '#FFFFFF',
-					light: '#403E43',
-					dark: '#221F26',
+					light: '#333333',
+					dark: '#000000',
 				},
 			},
 			borderRadius: {
