@@ -38,19 +38,39 @@ const DoctorSelector = ({ specialty, onSelect, initialValue }: DoctorSelectorPro
   const fetchDoctors = async (specialty: string) => {
     setIsLoading(true);
     try {
-      // Consulta actualizada para usar la relación entre doctors y specialties
-      const { data, error } = await supabase
-        .from("doctors")
-        .select("id, name, specialty")
-        .eq("specialty", specialty); // Mantenemos la consulta por nombre de especialidad para compatibilidad
+      // Consulta actualizada para buscar por specialty_id o specialty para mayor compatibilidad
+      const { data: specialtyData, error: specialtyError } = await supabase
+        .from("specialties")
+        .select("id")
+        .eq("name", specialty)
+        .single();
 
-      if (error) throw error;
+      if (specialtyError) {
+        // Si no encontramos por ID, intentamos buscar directamente por nombre de especialidad (para compatibilidad)
+        const { data, error } = await supabase
+          .from("doctors")
+          .select("id, name, specialty")
+          .eq("specialty", specialty);
 
-      setDoctors(data || []);
-      
-      // Si hay un valor inicial y ya no es válido con los nuevos doctores
-      if (selectedDoctor && !data?.some(d => d.id === selectedDoctor)) {
-        setSelectedDoctor("");
+        if (error) throw error;
+        setDoctors(data || []);
+        
+        if (selectedDoctor && !data?.some(d => d.id === selectedDoctor)) {
+          setSelectedDoctor("");
+        }
+      } else {
+        // Si encontramos la especialidad por su ID, usamos el specialty_id para la búsqueda
+        const { data, error } = await supabase
+          .from("doctors")
+          .select("id, name, specialty")
+          .eq("specialty_id", specialtyData.id);
+
+        if (error) throw error;
+        setDoctors(data || []);
+        
+        if (selectedDoctor && !data?.some(d => d.id === selectedDoctor)) {
+          setSelectedDoctor("");
+        }
       }
     } catch (error) {
       console.error("Error fetching doctors:", error);
