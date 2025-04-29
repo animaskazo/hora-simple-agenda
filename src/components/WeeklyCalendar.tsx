@@ -2,13 +2,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { format, addDays, startOfWeek, isEqual } from "date-fns";
+import { format, addDays, startOfWeek, setHours, setMinutes } from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar, Clock } from "lucide-react";
-import { 
-  ToggleGroup, 
-  ToggleGroupItem 
-} from "@/components/ui/toggle-group";
 
 export interface Availability {
   id: string;
@@ -30,10 +26,7 @@ const WeeklyCalendar = ({ onAvailabilityChange, initialAvailability = [] }: Week
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [startHour, setStartHour] = useState<string>("09:00");
   const [endHour, setEndHour] = useState<string>("18:00");
-  const [currentWeekStartDate, setCurrentWeekStartDate] = useState<Date>(
-    startOfWeek(new Date(), { weekStartsOn: 1 })
-  );
-
+  
   useEffect(() => {
     // Actualizar el estado local cuando cambian las props de disponibilidad inicial
     if (initialAvailability.length > 0) {
@@ -46,17 +39,16 @@ const WeeklyCalendar = ({ onAvailabilityChange, initialAvailability = [] }: Week
     `${i.toString().padStart(2, '0')}:00`
   );
 
-  // Días de la semana con fecha actual
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const date = addDays(currentWeekStartDate, i);
-    return {
-      number: i + 1,
-      name: format(date, 'EEEE', { locale: es }),
-      shortName: format(date, 'EEE', { locale: es }),
-      dayOfMonth: format(date, 'd'), // Día del mes como número
-      date: date,
-    };
-  });
+  // Días de la semana
+  const weekDays = [
+    { number: 1, name: "lunes", shortName: "lun" },
+    { number: 2, name: "martes", shortName: "mar" },
+    { number: 3, name: "miércoles", shortName: "mié" },
+    { number: 4, name: "jueves", shortName: "jue" },
+    { number: 5, name: "viernes", shortName: "vie" },
+    { number: 6, name: "sábado", shortName: "sáb" },
+    { number: 0, name: "domingo", shortName: "dom" },
+  ];
 
   const handleAddBlock = () => {
     if (!startHour || !endHour) return;
@@ -100,102 +92,61 @@ const WeeklyCalendar = ({ onAvailabilityChange, initialAvailability = [] }: Week
     return availability.filter(block => block.dayOfWeek === dayOfWeek);
   };
 
-  const renderWeeklyView = () => {
-    return (
-      <div className="mt-6">
-        <div className="grid grid-cols-7 gap-1">
-          {weekDays.map(day => (
-            <div key={day.number} 
-              className="text-center font-medium py-2">
-              <div className="flex flex-col items-center">
-                <span className="text-xs text-muted-foreground uppercase">{day.shortName}</span>
-                <span className="h-7 w-7 rounded-full bg-accent flex items-center justify-center mt-1">
-                  {day.dayOfMonth}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        <div className="grid grid-cols-7 gap-1 mt-2 relative availability-grid">
-          {weekDays.map(day => {
-            const dayBlocks = getDayBlocks(day.number);
-            const hasBlocks = dayBlocks.length > 0;
-            
-            return (
-              <div key={day.number}
-                className={`min-h-[100px] border rounded-md p-2 relative ${selectedDay === day.number ? 'border-primary' : 'border-border'}`}
-                onClick={() => setSelectedDay(day.number)}
-              >
-                {hasBlocks ? (
-                  <div className="space-y-1">
-                    {dayBlocks.map(block => (
-                      <div 
-                        key={block.id} 
-                        className="text-xs bg-primary text-primary-foreground p-1 rounded flex justify-between items-center"
-                      >
-                        <span>{formatTimeBlock(block)}</span>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemoveBlock(block.id);
-                          }}
-                          className="text-primary-foreground hover:text-white ml-1"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="h-full flex items-center justify-center">
-                    <span className="text-xs text-muted-foreground">No disponible</span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  const selectedDayInfo = weekDays.find(day => day.number === selectedDay);
-
   return (
     <Card className="w-full">
       <CardContent className="p-6">
         <div className="flex justify-between items-center mb-4">
           <div className="font-medium flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            <span>Vista semanal</span>
+            <span>Disponibilidad Semanal</span>
           </div>
-          <ToggleGroup type="single" value={selectedDay.toString()} onValueChange={(value) => value && setSelectedDay(Number(value))}>
-            {weekDays.map(day => (
-              <ToggleGroupItem key={day.number} value={day.number.toString()} className="px-2" aria-label={day.name}>
-                <span className="hidden sm:inline capitalize">{day.shortName}</span>
-                <span className="sm:hidden">{day.dayOfMonth}</span>
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
         </div>
         
-        {renderWeeklyView()}
+        <div className="grid grid-cols-7 gap-2 mb-6">
+          {weekDays.map(day => (
+            <Button
+              key={day.number}
+              variant={selectedDay === day.number ? "default" : "outline"}
+              className="w-full capitalize"
+              onClick={() => setSelectedDay(day.number)}
+            >
+              {day.shortName}
+            </Button>
+          ))}
+        </div>
         
-        <div className="mt-6 space-y-4">
-          <h3 className="text-lg font-medium flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            <span>
-              Disponibilidad - {selectedDayInfo ? (
-                <span className="capitalize">
-                  {selectedDayInfo.name} {selectedDayInfo.dayOfMonth}
-                </span>
-              ) : 'Seleccione un día'}
-            </span>
+        <div className="mt-4 border rounded-md p-4">
+          <h3 className="text-lg font-medium mb-4 capitalize">
+            {weekDays.find(d => d.number === selectedDay)?.name || "Día seleccionado"}
           </h3>
           
+          <div className="space-y-2 mb-4">
+            {getDayBlocks(selectedDay).map(block => (
+              <div 
+                key={block.id} 
+                className="flex justify-between items-center bg-accent p-3 rounded-md"
+              >
+                <span>{formatTimeBlock(block)}</span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleRemoveBlock(block.id)}
+                  className="h-8 w-8 p-0"
+                >
+                  ×
+                </Button>
+              </div>
+            ))}
+            
+            {getDayBlocks(selectedDay).length === 0 && (
+              <div className="text-center py-2 text-muted-foreground">
+                No hay disponibilidad configurada para este día
+              </div>
+            )}
+          </div>
+          
           {isEditing ? (
-            <div className="mt-4 border rounded-md p-4 space-y-4">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Hora inicio</label>
@@ -235,7 +186,7 @@ const WeeklyCalendar = ({ onAvailabilityChange, initialAvailability = [] }: Week
           ) : (
             <Button 
               variant="outline" 
-              className="w-full mt-2" 
+              className="w-full" 
               onClick={() => setIsEditing(true)}
             >
               + Añadir bloque de disponibilidad

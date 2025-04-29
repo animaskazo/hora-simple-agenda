@@ -20,7 +20,7 @@ export const DateGroup = ({ dateKey, slots, selectedSlotId, onSelectSlot }: Date
   return (
     <div className="border rounded-md p-4">
       <h4 className="font-medium mb-3 capitalize">{formattedDate}</h4>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {sortedSlots.map((slot) => (
           <TimeSlot
             key={slot.id}

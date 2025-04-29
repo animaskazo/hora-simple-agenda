@@ -1,5 +1,5 @@
 
-import { addDays, startOfWeek, setHours, setMinutes } from "date-fns";
+import { addDays, startOfWeek, setHours, setMinutes, format } from "date-fns";
 import { TimeSlotData } from "./TimeSlot";
 
 interface DoctorAvailability {
@@ -19,8 +19,12 @@ export const generateTimeSlotsFromAvailability = (availabilityData: DoctorAvaila
   // Generamos slots para las próximas 2 semanas
   for (let weekOffset = 0; weekOffset < 2; weekOffset++) {
     for (const availability of availabilityData) {
-      // Convertimos el día de la semana (0=domingo, 1=lunes, ...) a días desde el inicio de la semana
-      let dayOffset = availability.day_of_week === 0 ? 6 : availability.day_of_week - 1;
+      // Día de la semana es directo: 0=domingo, 1=lunes, etc.
+      const dayOfWeek = availability.day_of_week;
+      
+      // Calculamos el offset de días desde el inicio de la semana
+      // Si es domingo (0), es el día 6 de la semana
+      let dayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
       
       // Calculamos la fecha específica
       const slotDate = addDays(startDay, dayOffset + (weekOffset * 7));
@@ -93,4 +97,3 @@ export const groupSlotsByDay = (timeSlots: TimeSlotData[]) => {
 };
 
 // Helper function to format dates
-import { format } from "date-fns";
