@@ -4,6 +4,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format, addDays, startOfWeek, isEqual } from "date-fns";
 import { es } from "date-fns/locale";
+import { Calendar, Clock } from "lucide-react";
+import { 
+  ToggleGroup, 
+  ToggleGroupItem 
+} from "@/components/ui/toggle-group";
 
 export interface Availability {
   id: string;
@@ -90,60 +95,104 @@ const WeeklyCalendar = ({ onAvailabilityChange, initialAvailability = [] }: Week
     return `${block.startHour.toString().padStart(2, '0')}:${block.startMinute.toString().padStart(2, '0')} - ${block.endHour.toString().padStart(2, '0')}:${block.endMinute.toString().padStart(2, '0')}`;
   };
 
+  // Obtener los bloques para un día específico
+  const getDayBlocks = (dayOfWeek: number) => {
+    return availability.filter(block => block.dayOfWeek === dayOfWeek);
+  };
+
+  const renderWeeklyView = () => {
+    return (
+      <div className="mt-6">
+        <div className="grid grid-cols-7 gap-1">
+          {weekDays.map(day => (
+            <div key={day.number} 
+              className="text-center font-medium py-2">
+              <div className="flex flex-col items-center">
+                <span className="text-xs text-muted-foreground uppercase">{day.shortName}</span>
+                <span className="h-7 w-7 rounded-full bg-accent flex items-center justify-center mt-1">
+                  {day.dayOfMonth}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="grid grid-cols-7 gap-1 mt-2 relative availability-grid">
+          {weekDays.map(day => {
+            const dayBlocks = getDayBlocks(day.number);
+            const hasBlocks = dayBlocks.length > 0;
+            
+            return (
+              <div key={day.number}
+                className={`min-h-[100px] border rounded-md p-2 relative ${selectedDay === day.number ? 'border-primary' : 'border-border'}`}
+                onClick={() => setSelectedDay(day.number)}
+              >
+                {hasBlocks ? (
+                  <div className="space-y-1">
+                    {dayBlocks.map(block => (
+                      <div 
+                        key={block.id} 
+                        className="text-xs bg-primary text-primary-foreground p-1 rounded flex justify-between items-center"
+                      >
+                        <span>{formatTimeBlock(block)}</span>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveBlock(block.id);
+                          }}
+                          className="text-primary-foreground hover:text-white ml-1"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center">
+                    <span className="text-xs text-muted-foreground">No disponible</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const selectedDayInfo = weekDays.find(day => day.number === selectedDay);
 
   return (
     <Card className="w-full">
       <CardContent className="p-6">
-        <div className="flex flex-wrap gap-2 mb-4">
-          {weekDays.map(day => (
-            <Button
-              key={day.number}
-              variant={day.number === selectedDay ? "default" : "outline"}
-              onClick={() => setSelectedDay(day.number)}
-              className="flex-1 min-w-[70px] flex flex-col items-center"
-            >
-              <span className="flex items-center justify-center bg-primary/10 rounded-full w-6 h-6 mb-1 text-sm font-medium">
-                {day.dayOfMonth}
-              </span>
-              <span className="hidden sm:inline capitalize">{day.name}</span>
-              <span className="sm:hidden capitalize">{day.shortName}</span>
-            </Button>
-          ))}
+        <div className="flex justify-between items-center mb-4">
+          <div className="font-medium flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            <span>Vista semanal</span>
+          </div>
+          <ToggleGroup type="single" value={selectedDay.toString()} onValueChange={(value) => value && setSelectedDay(Number(value))}>
+            {weekDays.map(day => (
+              <ToggleGroupItem key={day.number} value={day.number.toString()} className="px-2" aria-label={day.name}>
+                <span className="hidden sm:inline capitalize">{day.shortName}</span>
+                <span className="sm:hidden">{day.dayOfMonth}</span>
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
         </div>
         
+        {renderWeeklyView()}
+        
         <div className="mt-6 space-y-4">
-          <h3 className="text-lg font-medium">
-            Bloques de disponibilidad - {selectedDayInfo ? (
-              <span className="capitalize">
-                {selectedDayInfo.name} {selectedDayInfo.dayOfMonth}
-              </span>
-            ) : 'Seleccione un día'}
+          <h3 className="text-lg font-medium flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            <span>
+              Disponibilidad - {selectedDayInfo ? (
+                <span className="capitalize">
+                  {selectedDayInfo.name} {selectedDayInfo.dayOfMonth}
+                </span>
+              ) : 'Seleccione un día'}
+            </span>
           </h3>
-          
-          {availability
-            .filter(block => block.dayOfWeek === selectedDay)
-            .map(block => (
-              <div 
-                key={block.id} 
-                className="flex justify-between items-center p-3 bg-accent rounded-md"
-              >
-                <span>{formatTimeBlock(block)}</span>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => handleRemoveBlock(block.id)}
-                >
-                  Eliminar
-                </Button>
-              </div>
-            ))}
-          
-          {availability.filter(block => block.dayOfWeek === selectedDay).length === 0 && (
-            <p className="text-muted-foreground text-sm">
-              No hay bloques configurados para este día
-            </p>
-          )}
           
           {isEditing ? (
             <div className="mt-4 border rounded-md p-4 space-y-4">

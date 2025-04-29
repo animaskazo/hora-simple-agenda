@@ -123,3 +123,21 @@
   color: hsl(var(--accent-foreground));
   border: 1px dashed hsl(var(--primary));
 }
+
+.availability-grid {
+  min-height: 150px;
+}
+
+.availability-block {
+  position: relative;
+  margin: 2px 0;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.availability-block:hover {
+  filter: brightness(1.1);
+}
