@@ -1,4 +1,6 @@
 
+-- Updated to remove any permission restrictions
+-- This function will return all doctors that have availability set up
 CREATE OR REPLACE FUNCTION public.get_doctors_with_availability()
 RETURNS TABLE (
   id uuid,
@@ -28,3 +30,6 @@ BEGIN
     d.name;
 END;
 $$;
+
+-- Grant execute permissions to all roles including anonymous
+GRANT EXECUTE ON FUNCTION public.get_doctors_with_availability() TO anon, authenticated, service_role;
