@@ -1,8 +1,8 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import DoctorsList from "@/components/DoctorsList";
 
 const Index = () => {
   return (
@@ -112,6 +112,13 @@ const Index = () => {
                 </li>
               </ul>
             </div>
+          </div>
+        </section>
+        
+        <section className="py-16 bg-accent/50">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold mb-8 text-center">Médicos Disponibles</h2>
+            <DoctorsList />
           </div>
         </section>
       </main>
