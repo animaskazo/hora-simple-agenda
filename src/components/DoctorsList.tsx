@@ -24,7 +24,7 @@ const DoctorsList = () => {
         setIsLoading(true);
         setError(null);
         
-        // Fetch doctors that have availability set up
+        // Fetch doctors that have availability set up using our new function
         const { data, error } = await supabase
           .rpc('get_doctors_with_availability');
           
@@ -34,7 +34,7 @@ const DoctorsList = () => {
         }
         
         console.log("Doctors with availability:", data);
-        setDoctors(data || []);
+        setDoctors(data as Doctor[] || []);
       } catch (error: any) {
         console.error("Error fetching doctors:", error);
         
@@ -47,7 +47,13 @@ const DoctorsList = () => {
             
           if (doctorsError) throw doctorsError;
           
-          setDoctors(allDoctors || []);
+          // Add the has_availability property to each doctor
+          const doctorsWithAvailability = allDoctors?.map(doctor => ({
+            ...doctor,
+            has_availability: false // Default to false since we're in fallback mode
+          })) || [];
+          
+          setDoctors(doctorsWithAvailability);
         } catch (fallbackError) {
           setError("Error al cargar la lista de médicos");
         }

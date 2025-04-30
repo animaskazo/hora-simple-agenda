@@ -174,6 +174,15 @@ export type Database = {
           specialty_id: string
         }[]
       }
+      get_doctors_with_availability: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          specialty: string
+          has_availability: boolean
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
