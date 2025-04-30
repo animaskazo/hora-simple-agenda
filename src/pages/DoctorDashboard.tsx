@@ -9,10 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import WeeklyCalendar from "@/components/weekly-calendar/WeeklyCalendar";
 import { Availability as WeeklyAvailability } from "@/components/weekly-calendar/types";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar, Clock, Copy, ExternalLink, Share2 } from "lucide-react";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
 
 interface DoctorData {
   id: string;
@@ -208,6 +209,52 @@ const DoctorDashboard = () => {
       .slice(0, 5); // Mostrar solo las 5 próximas citas
   };
 
+  // New function to handle copying the doctor's profile URL
+  const handleCopyProfileLink = () => {
+    if (!doctorData) return;
+    
+    const profileUrl = `${window.location.origin}/doctor/${doctorData.id}`;
+    
+    navigator.clipboard.writeText(profileUrl)
+      .then(() => {
+        toast({
+          title: "Enlace copiado",
+          description: "Enlace de tu perfil copiado al portapapeles",
+        });
+      })
+      .catch(err => {
+        console.error("Error al copiar el enlace:", err);
+        toast({
+          title: "Error",
+          description: "No se pudo copiar el enlace",
+          variant: "destructive",
+        });
+      });
+  };
+
+  // New function to handle copying the doctor's email link
+  const handleCopyEmailLink = () => {
+    if (!user?.email) return;
+    
+    const emailUrl = `${window.location.origin}/doctor/email/${encodeURIComponent(user.email)}`;
+    
+    navigator.clipboard.writeText(emailUrl)
+      .then(() => {
+        toast({
+          title: "Enlace copiado",
+          description: "Enlace por email copiado al portapapeles",
+        });
+      })
+      .catch(err => {
+        console.error("Error al copiar el enlace:", err);
+        toast({
+          title: "Error",
+          description: "No se pudo copiar el enlace",
+          variant: "destructive",
+        });
+      });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -251,6 +298,77 @@ const DoctorDashboard = () => {
                       <p><strong>Email:</strong> {user?.email}</p>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Share2 className="h-5 w-5" />
+                    Compartir tu perfil
+                  </CardTitle>
+                  <CardDescription>Enlaces para compartir tu disponibilidad</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm mb-2">Enlace por ID (más rápido):</p>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex items-center gap-2"
+                          onClick={handleCopyProfileLink}
+                        >
+                          <Copy size={16} />
+                          Copiar enlace
+                        </Button>
+                        
+                        {doctorData && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="flex items-center gap-2"
+                            asChild
+                          >
+                            <a href={`/doctor/${doctorData.id}`} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink size={16} />
+                              Ver página
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <p className="text-sm mb-2">Enlace por email (más fácil de recordar):</p>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex items-center gap-2"
+                          onClick={handleCopyEmailLink}
+                        >
+                          <Copy size={16} />
+                          Copiar enlace
+                        </Button>
+                        
+                        {user?.email && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="flex items-center gap-2"
+                            asChild
+                          >
+                            <a href={`/doctor/email/${encodeURIComponent(user.email)}`} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink size={16} />
+                              Ver página
+                            </a>
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
               
