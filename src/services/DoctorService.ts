@@ -8,6 +8,7 @@ interface DoctorData {
   specialty: string;
   user_id: string;
   specialty_id: string | null;
+  has_availability?: boolean;
 }
 
 export const fetchDoctorByEmail = async (email: string): Promise<DoctorData> => {
@@ -69,7 +70,12 @@ export const fetchDoctorById = async (doctorId: string): Promise<DoctorData> => 
         throw new Error(`No se encontró ningún médico con el ID: ${doctorId}`);
       }
       
-      return doctor;
+      // Add the missing properties required by DoctorData interface
+      return {
+        ...doctor,
+        user_id: "", // Add default or placeholder value for user_id
+        specialty_id: null // Add default or placeholder value for specialty_id
+      };
     }
     
     return data;
