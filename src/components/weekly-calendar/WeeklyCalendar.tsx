@@ -7,11 +7,11 @@ import { WeekDaySelector } from "./WeekDaySelector";
 import { DayContent } from "./DayContent";
 
 const WeeklyCalendar = ({ onAvailabilityChange, initialAvailability = [] }: WeeklyCalendarProps) => {
-  const [selectedDay, setSelectedDay] = useState<number>(1); // Iniciar en lunes (1)
+  const [selectedDay, setSelectedDay] = useState<number>(1); // Start on Monday (1)
   const [availability, setAvailability] = useState<Availability[]>(initialAvailability);
   
   useEffect(() => {
-    // Actualizar el estado local cuando cambian las props de disponibilidad inicial
+    // Update local state when initial availability props change
     if (initialAvailability.length > 0) {
       setAvailability(initialAvailability);
     }

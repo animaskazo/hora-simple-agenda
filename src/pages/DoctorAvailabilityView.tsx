@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,7 +9,6 @@ import EmptyState from "@/components/doctor/EmptyState";
 import DoctorInfo from "@/components/doctor/DoctorInfo";
 import { fetchDoctorByEmail, fetchDoctorById, showDoctorFoundToast, showErrorToast } from "@/services/DoctorService";
 
-// Define a type for the doctor data from the find_doctor_by_email function
 interface DoctorData {
   id: string;
   name: string;

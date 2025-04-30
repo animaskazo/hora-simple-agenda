@@ -10,6 +10,7 @@ interface Doctor {
   id: string;
   name: string;
   specialty: string;
+  has_availability: boolean;
 }
 
 const DoctorsList = () => {
@@ -23,19 +24,33 @@ const DoctorsList = () => {
         setIsLoading(true);
         setError(null);
         
+        // Fetch doctors that have availability set up
         const { data, error } = await supabase
-          .from("doctors")
-          .select("id, name, specialty")
-          .order("name");
+          .rpc('get_doctors_with_availability');
           
         if (error) {
+          console.error("Error fetching doctors:", error);
           throw error;
         }
         
+        console.log("Doctors with availability:", data);
         setDoctors(data || []);
       } catch (error: any) {
         console.error("Error fetching doctors:", error);
-        setError("Error al cargar la lista de médicos");
+        
+        // Fallback to fetch all doctors if the RPC fails
+        try {
+          const { data: allDoctors, error: doctorsError } = await supabase
+            .from("doctors")
+            .select("id, name, specialty")
+            .order("name");
+            
+          if (doctorsError) throw doctorsError;
+          
+          setDoctors(allDoctors || []);
+        } catch (fallbackError) {
+          setError("Error al cargar la lista de médicos");
+        }
       } finally {
         setIsLoading(false);
       }
