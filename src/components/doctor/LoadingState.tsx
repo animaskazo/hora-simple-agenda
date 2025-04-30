@@ -1,10 +1,16 @@
 
 import React from "react";
+import { Loader2 } from "lucide-react";
 
-const LoadingState = () => {
+interface LoadingStateProps {
+  message?: string;
+}
+
+const LoadingState = ({ message = "Cargando información..." }: LoadingStateProps) => {
   return (
-    <div className="text-center py-8">
-      <p>Cargando información del médico...</p>
+    <div className="flex flex-col items-center justify-center py-8 space-y-4">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <p className="text-muted-foreground">{message}</p>
     </div>
   );
 };

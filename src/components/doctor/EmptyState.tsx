@@ -3,19 +3,29 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-const EmptyState = () => {
+interface EmptyStateProps {
+  message?: string;
+  showButton?: boolean;
+}
+
+const EmptyState = ({ 
+  message = "No se encontró información", 
+  showButton = true 
+}: EmptyStateProps) => {
   const navigate = useNavigate();
   
   return (
-    <div className="text-center py-8">
-      <p className="text-destructive">No se encontró información del médico</p>
-      <Button 
-        variant="outline" 
-        onClick={() => navigate("/")}
-        className="mt-4"
-      >
-        Volver a Inicio
-      </Button>
+    <div className="text-center py-8 space-y-4">
+      <p className="text-muted-foreground">{message}</p>
+      {showButton && (
+        <Button 
+          variant="outline" 
+          onClick={() => navigate("/")}
+          className="mt-2"
+        >
+          Volver a Inicio
+        </Button>
+      )}
     </div>
   );
 };
