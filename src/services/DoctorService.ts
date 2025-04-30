@@ -38,24 +38,45 @@ export const fetchDoctorByEmail = async (email: string): Promise<DoctorData> => 
 export const fetchDoctorById = async (doctorId: string): Promise<DoctorData> => {
   console.log(`Looking up doctor by ID: ${doctorId}`);
   
-  const { data, error } = await supabase
-    .from("doctors")
-    .select("*")
-    .eq("id", doctorId)
-    .maybeSingle();
+  try {
+    // First try using the doctors table directly
+    const { data, error } = await supabase
+      .from("doctors")
+      .select("*")
+      .eq("id", doctorId)
+      .maybeSingle();
+      
+    if (error) {
+      console.error("Error fetching doctor by ID:", error);
+      throw error;
+    }
     
-  if (error) {
-    console.error("Error fetching doctor by ID:", error);
-    throw new Error(`Error al buscar médico por ID: ${error.message}`);
+    console.log("Doctor lookup by ID result:", data);
+    
+    if (!data) {
+      // Try getting the doctor from the RPC function that returns availability
+      const { data: rpcData, error: rpcError } = await supabase
+        .rpc('get_doctors_with_availability');
+        
+      if (rpcError) {
+        console.error("Error fetching doctors with availability:", rpcError);
+        throw rpcError;
+      }
+      
+      const doctor = rpcData.find((d: any) => d.id === doctorId);
+      
+      if (!doctor) {
+        throw new Error(`No se encontró ningún médico con el ID: ${doctorId}`);
+      }
+      
+      return doctor;
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error("Error in fetchDoctorById:", error);
+    throw new Error(`Error al buscar médico por ID: ${error.message || 'Unknown error'}`);
   }
-  
-  console.log("Doctor lookup by ID result:", data);
-  
-  if (!data) {
-    throw new Error(`No se encontró ningún médico con el ID: ${doctorId}`);
-  }
-  
-  return data;
 };
 
 export const showDoctorFoundToast = (doctorName: string) => {
