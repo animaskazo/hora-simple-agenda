@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,7 +20,7 @@ interface DoctorData {
 }
 
 const DoctorAvailabilityView = () => {
-  const { doctorId, email } = useParams();
+  const { doctorId, email } = useParams<{ doctorId?: string; email?: string }>();
   const [doctor, setDoctor] = useState<DoctorData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,10 +37,12 @@ const DoctorAvailabilityView = () => {
 
         // Check if we have an email parameter
         if (email) {
+          console.log(`Fetching doctor by email: ${email}`);
           doctorData = await fetchDoctorByEmail(email);
         } 
         // Otherwise, look up by doctor ID
         else if (doctorId) {
+          console.log(`Fetching doctor by ID: ${doctorId}`);
           doctorData = await fetchDoctorById(doctorId);
         } 
         else {

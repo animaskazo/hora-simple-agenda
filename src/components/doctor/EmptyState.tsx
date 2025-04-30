@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { CalendarX } from "lucide-react";
 
 interface EmptyStateProps {
   message?: string;
@@ -16,6 +17,9 @@ const EmptyState = ({
   
   return (
     <div className="text-center py-8 space-y-4">
+      <div className="flex justify-center">
+        <CalendarX className="h-10 w-10 text-muted-foreground mb-2" />
+      </div>
       <p className="text-muted-foreground">{message}</p>
       {showButton && (
         <Button 
