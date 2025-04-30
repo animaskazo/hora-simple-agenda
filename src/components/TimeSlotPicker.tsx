@@ -33,7 +33,7 @@ const TimeSlotPicker = ({ doctorId, onSelect }: TimeSlotPickerProps) => {
   const fetchDoctorAvailability = async (doctorId: string) => {
     setIsLoading(true);
     try {
-      // Get doctor availability (without requiring authentication)
+      // Get doctor availability using public access (no authentication required)
       console.log(`Fetching doctor availability for ID: "${doctorId}"`);
       const { data: availabilityData, error: availabilityError } = await supabase
         .from("doctor_availability")

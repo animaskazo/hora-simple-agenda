@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +23,8 @@ const DoctorsList = () => {
         setIsLoading(true);
         setError(null);
         
-        // Fetch doctors that have availability set up using our new function
+        console.log("Fetching doctors with availability...");
+        // Fetch doctors that have availability set up using our updated function
         const { data, error } = await supabase
           .rpc('get_doctors_with_availability');
           
