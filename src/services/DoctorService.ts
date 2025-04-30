@@ -54,11 +54,14 @@ export const fetchDoctorById = async (doctorId: string): Promise<DoctorData> => 
         
         if (doctor) {
           console.log("Found doctor in RPC data:", doctor);
-          // Add the missing properties required by DoctorData interface
+          // Create a complete DoctorData object with default values for missing properties
           return {
-            ...doctor,
-            user_id: doctor.user_id || "", 
-            specialty_id: doctor.specialty_id || null
+            id: doctor.id,
+            name: doctor.name,
+            specialty: doctor.specialty,
+            has_availability: doctor.has_availability || true,
+            user_id: "", // Default empty string since actual user_id is not available from RPC
+            specialty_id: null // Default null since specialty_id is not available from RPC
           };
         }
       }
