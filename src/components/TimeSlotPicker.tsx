@@ -65,6 +65,8 @@ const TimeSlotPicker = ({ doctorId, onSelect }: TimeSlotPickerProps) => {
         description: "No se pudo cargar la disponibilidad del médico",
         variant: "destructive",
       });
+      // Ensure we set empty slots so the UI shows the error state
+      setTimeSlots([]);
     } finally {
       setIsLoading(false);
     }

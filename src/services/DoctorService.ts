@@ -40,42 +40,47 @@ export const fetchDoctorById = async (doctorId: string): Promise<DoctorData> => 
   console.log(`Looking up doctor by ID: ${doctorId}`);
   
   try {
-    // First try using the doctors table directly
+    // First try using the rpc function that returns doctors with availability
+    const { data: rpcData, error: rpcError } = await supabase
+      .rpc('get_doctors_with_availability');
+      
+    if (rpcError) {
+      console.error("Error fetching doctors with availability:", rpcError);
+    } else {
+      console.log("RPC data returned:", rpcData);
+      
+      if (rpcData && rpcData.length > 0) {
+        const doctor = rpcData.find((d: any) => d.id === doctorId);
+        
+        if (doctor) {
+          console.log("Found doctor in RPC data:", doctor);
+          // Add the missing properties required by DoctorData interface
+          return {
+            ...doctor,
+            user_id: doctor.user_id || "", 
+            specialty_id: doctor.specialty_id || null
+          };
+        }
+      }
+    }
+    
+    // If not found in RPC, try direct table access
+    console.log("Doctor not found in RPC, trying direct table access");
     const { data, error } = await supabase
       .from("doctors")
       .select("*")
       .eq("id", doctorId)
-      .maybeSingle();
+      .single();
       
     if (error) {
-      console.error("Error fetching doctor by ID:", error);
+      console.error("Error fetching doctor by direct query:", error);
       throw error;
     }
     
-    console.log("Doctor lookup by ID result:", data);
+    console.log("Doctor lookup by direct query result:", data);
     
     if (!data) {
-      // Try getting the doctor from the RPC function that returns availability
-      const { data: rpcData, error: rpcError } = await supabase
-        .rpc('get_doctors_with_availability');
-        
-      if (rpcError) {
-        console.error("Error fetching doctors with availability:", rpcError);
-        throw rpcError;
-      }
-      
-      const doctor = rpcData.find((d: any) => d.id === doctorId);
-      
-      if (!doctor) {
-        throw new Error(`No se encontró ningún médico con el ID: ${doctorId}`);
-      }
-      
-      // Add the missing properties required by DoctorData interface
-      return {
-        ...doctor,
-        user_id: "", // Add default or placeholder value for user_id
-        specialty_id: null // Add default or placeholder value for specialty_id
-      };
+      throw new Error(`No se encontró ningún médico con el ID: ${doctorId}`);
     }
     
     return data;

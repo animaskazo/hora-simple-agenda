@@ -7,7 +7,7 @@ import LoadingState from "@/components/doctor/LoadingState";
 import ErrorState from "@/components/doctor/ErrorState";
 import EmptyState from "@/components/doctor/EmptyState";
 import DoctorInfo from "@/components/doctor/DoctorInfo";
-import { fetchDoctorByEmail, fetchDoctorById, showDoctorFoundToast, showErrorToast } from "@/services/DoctorService";
+import { fetchDoctorByEmail, fetchDoctorById } from "@/services/DoctorService";
 
 interface DoctorData {
   id: string;
@@ -47,16 +47,11 @@ const DoctorAvailabilityView = () => {
           throw new Error("No se proporcionó email ni ID del médico");
         }
         
-        // Show success toast
-        showDoctorFoundToast(doctorData.name);
-        
+        console.log("Doctor data fetched successfully:", doctorData);
         setDoctor(doctorData);
       } catch (error: any) {
         console.error("Error fetching doctor data:", error);
         setError(error.message || "Error al cargar los datos del médico");
-        
-        // Show error toast
-        showErrorToast(error.message || "Error al cargar los datos del médico");
       } finally {
         setIsLoading(false);
       }
